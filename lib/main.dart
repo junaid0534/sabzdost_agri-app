@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/localization/language_controller.dart';
 import 'core/theme/app_theme.dart';
-import 'features/onboarding/screens/onboarding_screen.dart';
+import 'features/splash/screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class SabzDostApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           locale: isUrdu ? const Locale('ur', 'PK') : const Locale('en', 'US'),
-          home: const OnboardingScreen(),
+          home: const SplashScreen(),
         );
       },
     );
