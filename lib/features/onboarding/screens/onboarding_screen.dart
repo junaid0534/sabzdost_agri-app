@@ -21,37 +21,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingItem> _slides = const [
     OnboardingItem(
       tagEnglish: "AI Crop Doctor",
-      tagUrdu: "فصل ڈاکٹر",
-      titleEnglish: "AI Crop Diagnosis",
-      titleUrdu: "فصل کی بیماری کی فوری تشخیص",
-      subtitleEnglish: "Instant plant diagnosis & spray remedies from camera.",
-      subtitleUrdu: "پتے کی تصویر لے کر بیماری کی تشخیص اور مستند اسپرے علاج جانیں۔",
+      tagUrdu: "AI Crop Doctor",
+      titleEnglish: "Instant Crop Disease Diagnosis",
+      titleUrdu: "Instant Crop Disease Diagnosis",
+      subtitleEnglish:
+          "Scan your crop with AI vision to detect diseases and get authentic remedies instantly.",
+      subtitleUrdu:
+          "Scan your crop with AI vision to detect diseases and get authentic remedies instantly.",
       badgeTextEnglish: "AI Vision",
-      badgeTextUrdu: "اے آئی ویژن",
+      badgeTextUrdu: "AI Vision",
       icon: Icons.psychology_rounded,
       badgeColor: AppColors.accentLime,
     ),
     OnboardingItem(
-      tagEnglish: "Mandi Rates",
-      tagUrdu: "منڈی ریٹس",
-      titleEnglish: "Daily Mandi Rates",
-      titleUrdu: "روزانہ تازہ ترین منڈی ریٹس",
-      subtitleEnglish: "Live verified market prices across Punjab & Sindh mandis.",
-      subtitleUrdu: "پنجاب اور سندھ کی منڈیوں کے مصدقہ لائیو ریٹس دیکھیں اور بہتر منافع کمائیں۔",
+      tagEnglish: "Live Mandi Rates",
+      tagUrdu: "Live Mandi Rates",
+      titleEnglish: "Verified Daily Mandi Rates",
+      titleUrdu: "Verified Daily Mandi Rates",
+      subtitleEnglish:
+          "Get real-time market rates across Punjab and Sindh to maximize your farm profit.",
+      subtitleUrdu:
+          "Get real-time market rates across Punjab and Sindh to maximize your farm profit.",
       badgeTextEnglish: "Live Rates",
-      badgeTextUrdu: "لائیو ریٹس",
+      badgeTextUrdu: "Live Rates",
       icon: Icons.storefront_rounded,
       badgeColor: AppColors.accentGold,
     ),
     OnboardingItem(
-      tagEnglish: "Farm Ledger",
-      tagUrdu: "کھیت کھاتہ",
-      titleEnglish: "Offline Farm Ledger",
-      titleUrdu: "کھیت کا مکمل حساب، 100% آف لائن",
-      subtitleEnglish: "Track expenses, labor & harvest profits without internet.",
-      subtitleUrdu: "کھاد، بیج، ڈیزل اور مزدوری کا خرچہ محفوظ رکھیں بغیر انٹرنیٹ کے۔",
+      tagEnglish: "Offline Farm Ledger",
+      tagUrdu: "Offline Farm Ledger",
+      titleEnglish: "Smart Farm Accounting, 100% Offline",
+      titleUrdu: "Smart Farm Accounting, 100% Offline",
+      subtitleEnglish:
+          "Easily track fertilizers, seeds, labor expenses, and net profit without internet.",
+      subtitleUrdu:
+          "Easily track fertilizers, seeds, labor expenses, and net profit without internet.",
       badgeTextEnglish: "Offline Safe",
-      badgeTextUrdu: "محفوظ کھاتہ",
+      badgeTextUrdu: "Offline Safe",
       icon: Icons.menu_book_rounded,
       badgeColor: AppColors.primaryMedium,
     ),
@@ -125,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           "SabzDost",
                           style: AppTheme.english(
-                            fontSize: 17,
+                            fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: AppColors.primaryDark,
                             letterSpacing: -0.4,
@@ -141,9 +147,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                         child: Text(
-                          "Skip (چھوڑیں)",
-                          style: AppTheme.urdu(
-                            fontSize: 12,
+                          "Skip",
+                          style: AppTheme.english(
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textMuted,
                           ),
@@ -155,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // PageView Slides (Clean, responsive, zero overlap)
+                // PageView Slides (Clean English, zero overlap)
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
@@ -179,7 +185,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                             // Category Tag Pill
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(20),
@@ -191,8 +197,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   Icon(slide.icon, size: 14, color: AppColors.primaryDark),
                                   const SizedBox(width: 6),
                                   Text(
-                                    "${slide.tagUrdu} • ${slide.tagEnglish}",
-                                    style: AppTheme.urdu(
+                                    slide.tagEnglish,
+                                    style: AppTheme.english(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.primaryDark,
@@ -204,36 +210,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                             const SizedBox(height: 14),
 
-                            // Clean, Bold Urdu Headline
+                            // Clean, Bold English Headline
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
-                                slide.titleUrdu,
+                                slide.titleEnglish,
                                 textAlign: TextAlign.center,
-                                style: AppTheme.urdu(
-                                  fontSize: 21,
+                                style: AppTheme.english(
+                                  fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.textDark,
-                                  height: 1.35,
+                                  height: 1.3,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
                             ),
 
                             const SizedBox(height: 8),
 
-                            // Concise 1-2 line Subtitle
+                            // Concise Subtitle
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                slide.subtitleUrdu,
+                                slide.subtitleEnglish,
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTheme.urdu(
+                                style: AppTheme.english(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
                                   color: AppColors.textMuted,
-                                  height: 1.5,
+                                  height: 1.45,
                                 ),
                               ),
                             ),
@@ -296,26 +303,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ),
 
                                 // Center Label
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      isLast ? "شروع کریں " : "آگے بڑھیں ",
-                                      style: AppTheme.urdu(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    Text(
-                                      isLast ? "(Get Started)" : "(Next)",
-                                      style: AppTheme.english(
-                                        color: AppColors.accentLime,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  isLast ? "Get Started" : "Next",
+                                  style: AppTheme.english(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
                                 ),
 
                                 // Right Chevron

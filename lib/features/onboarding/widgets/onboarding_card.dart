@@ -20,7 +20,7 @@ class OnboardingVisualCard extends StatelessWidget {
     }
   }
 
-  // Slide 1: AI Plant Doctor Visual (Clean & Modern)
+  // Slide 1: AI Plant Doctor Visual (Clean & Modern English)
   Widget _buildAiDoctorVisual(BuildContext context) {
     return Container(
       height: 235,
@@ -73,9 +73,9 @@ class OnboardingVisualCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.auto_awesome, color: AppColors.accentGold, size: 12),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 5),
                           Text(
-                            "AI Scanner • اسکینر",
+                            "AI Scanner",
                             style: AppTheme.english(
                               color: Colors.white,
                               fontSize: 10,
@@ -98,8 +98,8 @@ class OnboardingVisualCard extends StatelessWidget {
                           const Icon(Icons.mic_rounded, size: 12, color: AppColors.primaryDark),
                           const SizedBox(width: 4),
                           Text(
-                            "صوتی رہنمائی",
-                            style: AppTheme.urdu(
+                            "Voice Guide",
+                            style: AppTheme.english(
                               color: AppColors.textDark,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
@@ -167,9 +167,9 @@ class OnboardingVisualCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "کپاس: گلابی سنڈی کی تشخیص • 98% میچ",
+                          "Cotton: Pink Bollworm • 98% Match",
                           overflow: TextOverflow.ellipsis,
-                          style: AppTheme.urdu(
+                          style: AppTheme.english(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
@@ -183,8 +183,8 @@ class OnboardingVisualCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          "مستند علاج",
-                          style: AppTheme.urdu(
+                          "Verified Remedy",
+                          style: AppTheme.english(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
                             color: AppColors.successGreen,
@@ -202,7 +202,7 @@ class OnboardingVisualCard extends StatelessWidget {
     );
   }
 
-  // Slide 2: Live Mandi Rates Visual (Clean & Modern)
+  // Slide 2: Live Mandi Rates Visual (Clean & Modern English)
   Widget _buildMandiRatesVisual(BuildContext context) {
     return Container(
       height: 235,
@@ -240,7 +240,7 @@ class OnboardingVisualCard extends StatelessWidget {
                       const Icon(Icons.trending_up_rounded, color: AppColors.accentLime, size: 12),
                       const SizedBox(width: 4),
                       Text(
-                        "Live Mandi • لائیو ریٹس",
+                        "Live Mandi Rates",
                         style: AppTheme.english(
                           color: Colors.white,
                           fontSize: 10,
@@ -251,8 +251,8 @@ class OnboardingVisualCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "روزانہ تازہ ترین ریٹ",
-                  style: AppTheme.urdu(
+                  "Daily Updates",
+                  style: AppTheme.english(
                     color: AppColors.textMuted,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -263,8 +263,8 @@ class OnboardingVisualCard extends StatelessWidget {
 
             // Item 1: Wheat
             _buildMandiRow(
-              crop: "گندم (Wheat)",
-              mandi: "ملتان منڈی",
+              crop: "Wheat (Gandum)",
+              mandi: "Multan Grain Mandi",
               rate: "Rs. 3,950",
               change: "+2.5%",
               isPositive: true,
@@ -272,8 +272,8 @@ class OnboardingVisualCard extends StatelessWidget {
 
             // Item 2: Cotton
             _buildMandiRow(
-              crop: "کپاس (Cotton)",
-              mandi: "بہاولپور منڈی",
+              crop: "Cotton (Phutti)",
+              mandi: "Bahawalpur Mandi",
               rate: "Rs. 8,400",
               change: "+4.1%",
               isPositive: true,
@@ -318,7 +318,7 @@ class OnboardingVisualCard extends StatelessWidget {
                 children: [
                   Text(
                     crop,
-                    style: AppTheme.urdu(
+                    style: AppTheme.english(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -326,7 +326,7 @@ class OnboardingVisualCard extends StatelessWidget {
                   ),
                   Text(
                     mandi,
-                    style: AppTheme.urdu(
+                    style: AppTheme.english(
                       fontSize: 9.5,
                       color: AppColors.textMuted,
                     ),
@@ -371,7 +371,7 @@ class OnboardingVisualCard extends StatelessWidget {
     );
   }
 
-  // Slide 3: 100% Offline Khata Visual (Clean & Modern)
+  // Slide 3: 100% Offline Khata Visual (Clean & Modern English)
   Widget _buildOfflineKhataVisual(BuildContext context) {
     return Container(
       height: 235,
@@ -409,7 +409,7 @@ class OnboardingVisualCard extends StatelessWidget {
                       const Icon(Icons.wifi_off_rounded, color: AppColors.accentGold, size: 12),
                       const SizedBox(width: 4),
                       Text(
-                        "Offline • آف لائن کھاتہ",
+                        "Offline Ledger",
                         style: AppTheme.english(
                           color: Colors.white,
                           fontSize: 10,
@@ -427,8 +427,8 @@ class OnboardingVisualCard extends StatelessWidget {
                     border: Border.all(color: AppColors.borderLight),
                   ),
                   child: Text(
-                    "محفوظ ڈیٹا 🔒",
-                    style: AppTheme.urdu(
+                    "Secure Data 🔒",
+                    style: AppTheme.english(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -453,8 +453,8 @@ class OnboardingVisualCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "خالص سیزن منافع",
-                        style: AppTheme.urdu(
+                        "Net Season Profit",
+                        style: AppTheme.english(
                           color: AppColors.accentLime,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -489,9 +489,9 @@ class OnboardingVisualCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "گندم فصل فروخت (۴۰ من)",
+                      "Wheat Harvest Sale (40 Maund)",
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.urdu(
+                      style: AppTheme.english(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textDark,
