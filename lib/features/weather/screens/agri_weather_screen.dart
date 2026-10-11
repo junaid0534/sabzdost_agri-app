@@ -52,16 +52,15 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return Material(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.75,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Center(
                 child: Container(
                   width: 40,
@@ -169,6 +168,7 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
               ),
             ],
           ),
+        ),
         );
       },
     );
@@ -415,36 +415,41 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
 
           // Weather Metrics (Wind, Humidity, Rain)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMetric(
-                  icon: Icons.air_rounded,
-                  label: _isUrdu ? "ہوا کی رفتار" : "Wind Speed",
-                  value: "${cur.windSpeed.round()} km/h",
+                Expanded(
+                  child: _buildMetric(
+                    icon: Icons.air_rounded,
+                    label: _isUrdu ? "ہوا کی رفتار" : "Wind Speed",
+                    value: "${cur.windSpeed.round()} km/h",
+                  ),
                 ),
                 Container(
                     width: 1,
                     height: 26,
                     color: Colors.white.withValues(alpha: 0.2)),
-                _buildMetric(
-                  icon: Icons.water_drop_rounded,
-                  label: _isUrdu ? "نمی" : "Humidity",
-                  value: "${cur.humidity}%",
+                Expanded(
+                  child: _buildMetric(
+                    icon: Icons.water_drop_rounded,
+                    label: _isUrdu ? "نمی" : "Humidity",
+                    value: "${cur.humidity}%",
+                  ),
                 ),
                 Container(
                     width: 1,
                     height: 26,
                     color: Colors.white.withValues(alpha: 0.2)),
-                _buildMetric(
-                  icon: Icons.umbrella_rounded,
-                  label: _isUrdu ? "بارش" : "Precipitation",
-                  value: "${cur.precipitation} mm",
+                Expanded(
+                  child: _buildMetric(
+                    icon: Icons.umbrella_rounded,
+                    label: _isUrdu ? "بارش" : "Precipitation",
+                    value: "${cur.precipitation} mm",
+                  ),
                 ),
               ],
             ),
@@ -460,22 +465,30 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
     required String value,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: AppColors.accentLime),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            color: Colors.white.withValues(alpha: 0.75),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5,
+              color: Colors.white.withValues(alpha: 0.75),
+            ),
           ),
         ),
       ],
@@ -757,63 +770,73 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
           final item = list[index];
 
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            padding: const EdgeInsets.symmetric(vertical: 9.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // 1. Day Name (Sized with ellipsis)
                 SizedBox(
-                  width: 85,
+                  width: 65,
                   child: Text(
                     _isUrdu ? item.dayNameUrdu : item.dayNameEnglish,
+                    overflow: TextOverflow.ellipsis,
                     style: _isUrdu
                         ? AppTheme.urdu(
-                            fontSize: 12.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
                           )
                         : AppTheme.english(
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
                           ),
                   ),
                 ),
-                Row(
-                  children: [
-                    Icon(item.icon, size: 20, color: AppColors.primaryDark),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 100,
-                      child: Text(
-                        _isUrdu ? item.conditionUrdu : item.conditionEnglish,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
+                const SizedBox(width: 4),
+
+                // 2. Weather Condition Icon & Text (Expanded to absorb remaining width)
+                Expanded(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(item.icon, size: 17, color: AppColors.primaryDark),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          _isUrdu ? item.conditionUrdu : item.conditionEnglish,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 6),
+
+                // 3. Rain chance & Min/Max Temp
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     if (item.rainChance > 20) ...[
                       const Icon(Icons.water_drop_rounded,
-                          size: 11, color: Color(0xFF1E88E5)),
+                          size: 10, color: Color(0xFF1E88E5)),
                       Text(
-                        " ${item.rainChance}%",
+                        "${item.rainChance}% ",
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1E88E5),
                         ),
                       ),
-                      const SizedBox(width: 8),
                     ],
                     Text(
                       "${item.maxTemp.round()}° / ${item.minTemp.round()}°",
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
