@@ -9,11 +9,124 @@ class WeatherService {
   // In-memory cache to ensure instant loading and zero repeated network requests
   static final Map<String, AgriWeatherReport> _weatherCache = {};
   static AgriCity _currentSelectedCity = AgriCity.defaultCity;
+  static bool _hasAttemptedAutoDetect = false;
+  static bool _isAutoDetected = false;
 
   static AgriCity get currentCity => _currentSelectedCity;
+  static bool get isAutoDetected => _isAutoDetected;
 
   static void setCity(AgriCity city) {
     _currentSelectedCity = city;
+    _isAutoDetected = false;
+  }
+
+  static const Map<String, String> _urduCityMap = {
+    'fatehjang': 'فتح جنگ',
+    'fateh jang': 'فتح جنگ',
+    'rawalpindi': 'راولپنڈی',
+    'islamabad': 'اسلام آباد',
+    'lahore': 'لاہور',
+    'karachi': 'کراچی',
+    'faisalabad': 'فیصل آباد',
+    'multan': 'ملتان',
+    'peshawar': 'پشاور',
+    'quetta': 'کوئٹہ',
+    'gujranwala': 'گوجرانوالہ',
+    'sialkot': 'سیالکوٹ',
+    'bahawalpur': 'بہاولپور',
+    'sargodha': 'سرگودھا',
+    'abbottabad': 'ایبٹ آباد',
+    'attock': 'اٹک',
+    'chakwal': 'چکوال',
+    'jhelum': 'جہلم',
+    'mianwali': 'میانوالی',
+    'kasur': 'قصور',
+    'sheikhupura': 'شیخوپورہ',
+    'okara': 'اوکاڑہ',
+    'sahiwal': 'ساہیوال',
+    'vehari': 'وہاڑی',
+    'khanewal': 'خانیوال',
+    'dera ghazi khan': 'ڈیرہ غازی خان',
+    'muzaffargarh': 'مظفر گڑھ',
+    'rahim yar khan': 'رحیم یار خان',
+    'sukkur': 'سکھر',
+    'hyderabad': 'حیدرآباد',
+    'larkana': 'لاڑکانہ',
+    'nawabshah': 'نواب شاہ',
+    'mirpur khas': 'میرپور خاص',
+    'mardan': 'مردان',
+    'swat': 'سوات',
+    'dera ismail khan': 'ڈیرہ اسماعیل خان',
+    'hafizabad': 'حافظ آباد',
+    'gujrat': 'گجرات',
+    'pakpattan': 'پاکپتن',
+    'lodhran': 'لودھراں',
+    'bhakkar': 'بھکر',
+    'khushab': 'خوشاب',
+    'layyah': 'لیہ',
+    'jhang': 'جھنگ',
+    'toba tek singh': 'ٹوبہ ٹیک سنگھ',
+    'chiniot': 'چنیوٹ',
+    'narowal': 'ناروال',
+    'mandi bahauddin': 'منڈی بہاؤالدین',
+  };
+
+  /// Automatically detects the user's live Pakistani city and coordinates
+  static Future<AgriCity?> autoDetectLiveLocation() async {
+    try {
+      final response = await http
+          .get(Uri.parse("http://ip-api.com/json/"))
+          .timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data['status'] == 'success') {
+          final cityName = (data['city'] as String?)?.trim() ?? '';
+          final double lat = (data['lat'] as num).toDouble();
+          final double lon = (data['lon'] as num).toDouble();
+          final region = (data['regionName'] as String?) ?? 'Pakistan';
+
+          // 1. Try exact or partial match with our AgriCity catalogue
+          AgriCity? matchedCity;
+          for (final city in AgriCity.pakistaniCities) {
+            if (city.nameEnglish.toLowerCase() == cityName.toLowerCase()) {
+              matchedCity = city;
+              break;
+            }
+          }
+
+          if (matchedCity == null && cityName.isNotEmpty) {
+            for (final city in AgriCity.pakistaniCities) {
+              if (city.nameEnglish.toLowerCase().contains(cityName.toLowerCase()) ||
+                  cityName.toLowerCase().contains(city.nameEnglish.toLowerCase())) {
+                matchedCity = city;
+                break;
+              }
+            }
+          }
+
+          // 2. If not in predefined catalogue, construct city from live coordinates
+          final detected = matchedCity ??
+              AgriCity(
+                nameEnglish: cityName.isNotEmpty ? cityName : "Live Location",
+                nameUrdu: _urduCityMap[cityName.toLowerCase()] ??
+                    (cityName.isNotEmpty ? cityName : "لائیو لوکیشن"),
+                latitude: lat,
+                longitude: lon,
+                province: region,
+              );
+
+          _isAutoDetected = true;
+          _currentSelectedCity = detected;
+          return detected;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Auto location detection failed: $e");
+      }
+    }
+    return null;
   }
 
   /// Fetches live weather & agricultural spray advisory from Open-Meteo
@@ -21,6 +134,12 @@ class WeatherService {
     AgriCity? city,
     bool forceRefresh = false,
   }) async {
+    // If no city explicitly requested and auto-detect hasn't run yet, auto-detect first
+    if (city == null && !_hasAttemptedAutoDetect) {
+      _hasAttemptedAutoDetect = true;
+      await autoDetectLiveLocation();
+    }
+
     final targetCity = city ?? _currentSelectedCity;
     _currentSelectedCity = targetCity;
     final cacheKey = targetCity.nameEnglish.toLowerCase();

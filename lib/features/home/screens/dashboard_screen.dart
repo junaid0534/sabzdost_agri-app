@@ -453,58 +453,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 7,
-                              height: 7,
-                              decoration: const BoxDecoration(
-                                color: AppColors.accentLime,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              "${_liveWeather?.city.nameUrdu ?? 'ملتان'} • ${_isUrdu ? 'لائیو زرعی موسم' : 'Live Agri Weather'}",
-                              style: _isUrdu
-                                  ? AppTheme.urdu(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                    )
-                                  : AppTheme.english(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                    ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-                          ),
+                        Expanded(
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                _liveWeather?.current.icon ?? Icons.wb_sunny_rounded,
-                                size: 12,
-                                color: AppColors.accentGold,
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.accentLime,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 13,
+                                color: AppColors.accentLime,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                "${_liveWeather?.current.temperature.round() ?? 28}°C • ${_isUrdu ? (_liveWeather?.current.conditionUrdu ?? 'صاف') : (_liveWeather?.current.conditionEnglish ?? 'Clear')}",
-                                style: const TextStyle(
-                                  fontSize: 9.5,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
+                              Flexible(
+                                child: Text(
+                                  _isUrdu
+                                      ? (_liveWeather?.city.nameUrdu ?? 'ملتان')
+                                      : (_liveWeather?.city.nameEnglish ?? 'Multan'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _isUrdu
+                                      ? AppTheme.urdu(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        )
+                                      : AppTheme.english(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _liveWeather?.current.icon ?? Icons.wb_sunny_rounded,
+                                  size: 13,
+                                  color: AppColors.accentGold,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    "${_liveWeather?.current.temperature.round() ?? 28}°C • ${_isUrdu ? (_liveWeather?.current.conditionUrdu ?? 'صاف') : (_liveWeather?.current.conditionEnglish ?? 'Clear')}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

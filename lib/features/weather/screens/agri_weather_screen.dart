@@ -41,6 +41,7 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
     if (mounted) {
       setState(() {
         _report = report;
+        _selectedCity = report.city;
         _isLoading = false;
       });
     }
@@ -95,7 +96,92 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // Auto-Detect Live Location Action
+              InkWell(
+                onTap: () async {
+                  Navigator.pop(context);
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  final detected = await WeatherService.autoDetectLiveLocation();
+                  if (detected != null) {
+                    setState(() {
+                      _selectedCity = detected;
+                    });
+                  }
+                  _loadWeather(forceRefresh: true);
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primaryMedium.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryDark,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.my_location_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isUrdu
+                                  ? "موجودہ لائیو لوکیشن خودکار حاصل کریں"
+                                  : "Auto-detect My Live Location",
+                              style: _isUrdu
+                                  ? AppTheme.urdu(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                    )
+                                  : AppTheme.english(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                    ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _isUrdu
+                                  ? "نیٹ ورک سے آپ کے ضلع یا شہر کا لائیو موسم"
+                                  : "Detect exact district & coordinates via network",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 13,
+                        color: AppColors.primaryMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
               Expanded(
                 child: ListView.separated(
                   itemCount: AgriCity.pakistaniCities.length,
@@ -157,6 +243,7 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
                           : null,
                       onTap: () {
                         Navigator.pop(context);
+                        WeatherService.setCity(city);
                         setState(() {
                           _selectedCity = city;
                         });
@@ -209,22 +296,44 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
                   const Icon(Icons.location_on_rounded,
                       size: 13, color: AppColors.primaryMedium),
                   const SizedBox(width: 4),
-                  Text(
-                    _isUrdu
-                        ? "${_selectedCity.nameUrdu} (تبدیل کریں ▾)"
-                        : "${_selectedCity.nameEnglish} (Change ▾)",
-                    style: _isUrdu
-                        ? AppTheme.urdu(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryMedium,
-                          )
-                        : AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryMedium,
-                          ),
+                  Flexible(
+                    child: Text(
+                      _isUrdu
+                          ? "${_selectedCity.nameUrdu} (تبدیل کریں ▾)"
+                          : "${_selectedCity.nameEnglish} (Change ▾)",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _isUrdu
+                          ? AppTheme.urdu(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryMedium,
+                            )
+                          : AppTheme.english(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryMedium,
+                            ),
+                    ),
                   ),
+                  if (WeatherService.isAutoDetected) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _isUrdu ? "لائیو" : "LIVE",
+                        style: const TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
