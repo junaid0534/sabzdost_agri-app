@@ -7,6 +7,9 @@ import '../../doctor/screens/crop_doctor_screen.dart';
 import '../../ledger/screens/farm_ledger_screen.dart';
 import '../../machinery/screens/machinery_category_screen.dart';
 import '../../mandi/screens/mandi_rates_screen.dart';
+import '../../weather/models/weather_models.dart';
+import '../../weather/screens/agri_weather_screen.dart';
+import '../../weather/services/weather_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int initialIndex;
@@ -19,11 +22,22 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late int _selectedBottomNav;
   bool get _isUrdu => LanguageController.instance.isUrdu;
+  AgriWeatherReport? _liveWeather;
 
   @override
   void initState() {
     super.initState();
     _selectedBottomNav = widget.initialIndex;
+    _fetchDashboardWeather();
+  }
+
+  Future<void> _fetchDashboardWeather() async {
+    final report = await WeatherService.fetchWeather();
+    if (mounted) {
+      setState(() {
+        _liveWeather = report;
+      });
+    }
   }
 
   @override
@@ -417,103 +431,126 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
 
           // Main Banner Content
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Header Row: Status badge & farm subtitle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(22),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => AgriWeatherScreen(isUrdu: _isUrdu),
+                  ),
+                ).then((_) => _fetchDashboardWeather());
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Top Header Row: Status badge & farm subtitle
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: AppColors.accentLime,
-                            shape: BoxShape.circle,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: AppColors.accentLime,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "${_liveWeather?.city.nameUrdu ?? 'ملتان'} • ${_isUrdu ? 'لائیو زرعی موسم' : 'Live Agri Weather'}",
+                              style: _isUrdu
+                                  ? AppTheme.urdu(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                    )
+                                  : AppTheme.english(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                    ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _isUrdu ? "فارم کی لائیو صورتحال" : "Live Field Monitor",
-                          style: _isUrdu
-                              ? AppTheme.urdu(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                )
-                              : AppTheme.english(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.85),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _liveWeather?.current.icon ?? Icons.wb_sunny_rounded,
+                                size: 12,
+                                color: AppColors.accentGold,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "${_liveWeather?.current.temperature.round() ?? 28}°C • ${_isUrdu ? (_liveWeather?.current.conditionUrdu ?? 'صاف') : (_liveWeather?.current.conditionEnglish ?? 'Clear')}",
+                                style: const TextStyle(
+                                  fontSize: 9.5,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle_rounded, size: 11, color: AppColors.accentLime),
-                          const SizedBox(width: 4),
-                          Text(
-                            _isUrdu ? "سب فعال" : "All Normal",
-                            style: const TextStyle(
-                              fontSize: 9.5,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
+                    const SizedBox(height: 14),
 
-                // 3 Integrated Clean Metrics (Soil, Weather, Air)
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSimpleMetricPill(
-                        title: _isUrdu ? "زمین" : "Soil",
-                        value: _isUrdu ? "بہترین" : "Optimal",
-                        icon: Icons.spa_rounded,
-                        accentColor: const Color(0xFF66BB6A),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildSimpleMetricPill(
-                        title: _isUrdu ? "موسم" : "Weather",
-                        value: "28°C",
-                        icon: Icons.wb_sunny_rounded,
-                        accentColor: const Color(0xFFFFCA28),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildSimpleMetricPill(
-                        title: _isUrdu ? "ہوا" : "Air",
-                        value: _isUrdu ? "صاف" : "Clean",
-                        icon: Icons.air_rounded,
-                        accentColor: const Color(0xFF4DD0E1),
-                      ),
+                    // 3 Integrated Clean Metrics (Temperature, Spray Advisory, Wind Speed)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSimpleMetricPill(
+                            title: _isUrdu ? "درجہ حرارت" : "Temp",
+                            value: "${_liveWeather?.current.temperature.round() ?? 28}°C",
+                            icon: _liveWeather?.current.icon ?? Icons.wb_sunny_rounded,
+                            accentColor: const Color(0xFFFFCA28),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildSimpleMetricPill(
+                            title: _isUrdu ? "اسپرے موسم" : "Spray",
+                            value: _liveWeather == null
+                                ? (_isUrdu ? "بہترین" : "Ideal")
+                                : _liveWeather!.sprayAdvisory.status == SprayStatus.optimal
+                                    ? (_isUrdu ? "بہترین" : "Ideal")
+                                    : _liveWeather!.sprayAdvisory.status == SprayStatus.caution
+                                        ? (_isUrdu ? "احتیاط" : "Caution")
+                                        : (_isUrdu ? "روک دیں" : "Avoid"),
+                            icon: Icons.sanitizer_rounded,
+                            accentColor: _liveWeather?.sprayAdvisory.statusColor ?? const Color(0xFF66BB6A),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildSimpleMetricPill(
+                            title: _isUrdu ? "ہوا کی رفتار" : "Wind",
+                            value: "${_liveWeather?.current.windSpeed.round() ?? 8} km/h",
+                            icon: Icons.air_rounded,
+                            accentColor: const Color(0xFF4DD0E1),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -1177,19 +1214,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           subtitle: _isUrdu ? "قریبی لیزر لیولر، ٹریکٹر اور ہارویسٹر" : "Laser levelers, tractors & harvesters",
           tagText: _isUrdu ? "کرایہ" : "Rent",
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  _isUrdu
-                      ? "زرعی مشینری کا فیچر جلد فعال ہو رہا ہے"
-                      : "Machinery rental is rolling out soon",
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
-                ),
-                backgroundColor: AppColors.primaryDark,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => MachineryCategoryScreen(isUrdu: _isUrdu),
               ),
             );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // Action 4: Live Agri Weather & Spray Advisory
+        _buildActionTile(
+          icon: Icons.wb_sunny_rounded,
+          iconBgColor: const Color(0xFFFFF3E0),
+          iconColor: const Color(0xFFE65100),
+          title: _isUrdu ? "موسم اور اسپرے ایڈوائزری" : "Agri Weather & Spray Guide",
+          subtitle: _isUrdu ? "لائیو موسم، بارش کا امکان اور اسپرے رہنمائی" : "Real-time weather & 7-day spray suitability",
+          tagText: _isUrdu ? "لائیو" : "Live",
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => AgriWeatherScreen(isUrdu: _isUrdu),
+              ),
+            ).then((_) => _fetchDashboardWeather());
           },
         ),
       ],
