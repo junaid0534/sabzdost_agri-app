@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import '../models/agri_city.dart';
 import '../models/weather_models.dart';
@@ -21,6 +22,11 @@ class WeatherService {
   }
 
   static const Map<String, String> _urduCityMap = {
+    'taxila': 'ٹیکسلا',
+    'wah cantt': 'واہ کینٹ',
+    'wah': 'واہ',
+    'hassan abdal': 'حسن ابدال',
+    'kamra': 'کامرہ',
     'fatehjang': 'فتح جنگ',
     'fateh jang': 'فتح جنگ',
     'rawalpindi': 'راولپنڈی',
@@ -71,62 +77,181 @@ class WeatherService {
     'mandi bahauddin': 'منڈی بہاؤالدین',
   };
 
-  /// Automatically detects the user's live Pakistani city and coordinates
+  /// Automatically detects the user's exact live location:
+  /// 1. Tries device hardware GPS (accurate down to Taxila/meters)
+  /// 2. If GPS is unavailable/denied, falls back to IP-based location
   static Future<AgriCity?> autoDetectLiveLocation() async {
+    // 1. Precise Device Hardware GPS
     try {
+      final gpsCity = await _detectViaGps();
+      if (gpsCity != null) {
+        _isAutoDetected = true;
+        _currentSelectedCity = gpsCity;
+        return gpsCity;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Live GPS detection note: $e");
+      }
+    }
+
+    // 2. Network / IP Location Fallback
+    try {
+      final ipCity = await _detectViaIp();
+      if (ipCity != null) {
+        _isAutoDetected = true;
+        _currentSelectedCity = ipCity;
+        return ipCity;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Network IP detection note: $e");
+      }
+    }
+
+    return null;
+  }
+
+  /// Fetches exact device GPS coordinates and reverse geocodes to the exact city/town
+  static Future<AgriCity?> _detectViaGps() async {
+    final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return null;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    Position? position;
+    try {
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 4),
+        ),
+      );
+    } catch (_) {
+      position = await Geolocator.getLastKnownPosition();
+    }
+
+    if (position == null) return null;
+
+    return await _reverseGeocode(position.latitude, position.longitude);
+  }
+
+  /// Reverse geocodes exact coordinates into town/city name using BigDataCloud
+  static Future<AgriCity?> _reverseGeocode(double lat, double lon) async {
+    try {
+      final url =
+          "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=$lat&longitude=$lon&localityLanguage=en";
       final response = await http
-          .get(Uri.parse("http://ip-api.com/json/"))
+          .get(Uri.parse(url))
           .timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        if (data['status'] == 'success') {
-          final cityName = (data['city'] as String?)?.trim() ?? '';
-          final double lat = (data['lat'] as num).toDouble();
-          final double lon = (data['lon'] as num).toDouble();
-          final region = (data['regionName'] as String?) ?? 'Pakistan';
-
-          // 1. Try exact or partial match with our AgriCity catalogue
-          AgriCity? matchedCity;
-          for (final city in AgriCity.pakistaniCities) {
-            if (city.nameEnglish.toLowerCase() == cityName.toLowerCase()) {
-              matchedCity = city;
-              break;
-            }
-          }
-
-          if (matchedCity == null && cityName.isNotEmpty) {
-            for (final city in AgriCity.pakistaniCities) {
-              if (city.nameEnglish.toLowerCase().contains(cityName.toLowerCase()) ||
-                  cityName.toLowerCase().contains(city.nameEnglish.toLowerCase())) {
-                matchedCity = city;
-                break;
-              }
-            }
-          }
-
-          // 2. If not in predefined catalogue, construct city from live coordinates
-          final detected = matchedCity ??
-              AgriCity(
-                nameEnglish: cityName.isNotEmpty ? cityName : "Live Location",
-                nameUrdu: _urduCityMap[cityName.toLowerCase()] ??
-                    (cityName.isNotEmpty ? cityName : "لائیو لوکیشن"),
-                latitude: lat,
-                longitude: lon,
-                province: region,
-              );
-
-          _isAutoDetected = true;
-          _currentSelectedCity = detected;
-          return detected;
+        String cityName = (data['city'] as String?)?.trim() ?? '';
+        if (cityName.isEmpty) {
+          cityName = (data['locality'] as String?)?.trim() ?? '';
         }
+        final province =
+            (data['principalSubdivision'] as String?) ?? 'Punjab';
+
+        return _matchOrBuildCity(
+          cityName: cityName.isNotEmpty ? cityName : "Live Location",
+          lat: lat,
+          lon: lon,
+          province: province,
+        );
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Auto location detection failed: $e");
+        print("Reverse geocode error: $e");
       }
     }
     return null;
+  }
+
+  /// Fallback via IP network geolocation
+  static Future<AgriCity?> _detectViaIp() async {
+    final response = await http
+        .get(Uri.parse("http://ip-api.com/json/"))
+        .timeout(const Duration(seconds: 4));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data['status'] == 'success') {
+        final cityName = (data['city'] as String?)?.trim() ?? '';
+        final double lat = (data['lat'] as num).toDouble();
+        final double lon = (data['lon'] as num).toDouble();
+        final region = (data['regionName'] as String?) ?? 'Pakistan';
+
+        return _matchOrBuildCity(
+          cityName: cityName,
+          lat: lat,
+          lon: lon,
+          province: region,
+        );
+      }
+    }
+    return null;
+  }
+
+  static AgriCity _matchOrBuildCity({
+    required String cityName,
+    required double lat,
+    required double lon,
+    required String province,
+  }) {
+    // 1. Exact match in AgriCity.pakistaniCities
+    for (final city in AgriCity.pakistaniCities) {
+      if (city.nameEnglish.toLowerCase() == cityName.toLowerCase()) {
+        return AgriCity(
+          nameEnglish: city.nameEnglish,
+          nameUrdu: city.nameUrdu,
+          latitude: lat,
+          longitude: lon,
+          province: city.province,
+        );
+      }
+    }
+
+    // 2. Substring match
+    if (cityName.isNotEmpty) {
+      for (final city in AgriCity.pakistaniCities) {
+        if (city.nameEnglish.toLowerCase().contains(cityName.toLowerCase()) ||
+            cityName.toLowerCase().contains(city.nameEnglish.toLowerCase())) {
+          return AgriCity(
+            nameEnglish: city.nameEnglish,
+            nameUrdu: city.nameUrdu,
+            latitude: lat,
+            longitude: lon,
+            province: city.province,
+          );
+        }
+      }
+    }
+
+    // 3. Known Urdu map or fallback
+    final urduName = _urduCityMap[cityName.toLowerCase()] ??
+        (cityName.isNotEmpty ? cityName : "لائیو لوکیشن");
+
+    return AgriCity(
+      nameEnglish: cityName.isNotEmpty ? cityName : "Live Location",
+      nameUrdu: urduName,
+      latitude: lat,
+      longitude: lon,
+      province: province,
+    );
   }
 
   /// Fetches live weather & agricultural spray advisory from Open-Meteo

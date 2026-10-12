@@ -40,9 +40,9 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryDark,
+        seedColor: AppColors.primaryMedium,
         primary: AppColors.primaryDark,
-        secondary: AppColors.accentGold,
+        secondary: AppColors.freshLeafGreen,
         surface: AppColors.surface,
       ),
       textTheme: GoogleFonts.plusJakartaSansTextTheme(),

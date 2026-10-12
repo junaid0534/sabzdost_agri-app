@@ -196,6 +196,27 @@ class AgriCity {
       longitude: 73.0479,
       province: "Federal / Punjab",
     ),
+    AgriCity(
+      nameEnglish: "Taxila",
+      nameUrdu: "ٹیکسلا",
+      latitude: 33.7460,
+      longitude: 72.8397,
+      province: "Punjab",
+    ),
+    AgriCity(
+      nameEnglish: "Wah Cantt",
+      nameUrdu: "واہ کینٹ",
+      latitude: 33.7715,
+      longitude: 72.7511,
+      province: "Punjab",
+    ),
+    AgriCity(
+      nameEnglish: "Fateh Jang",
+      nameUrdu: "فتح جنگ",
+      latitude: 33.5649,
+      longitude: 72.6428,
+      province: "Punjab",
+    ),
   ];
 
   static AgriCity get defaultCity => pakistaniCities.first; // Multan
