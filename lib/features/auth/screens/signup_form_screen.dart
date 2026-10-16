@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../home/screens/dashboard_screen.dart';
+import '../../machinery/screens/machinery_provider_dashboard_screen.dart';
 import '../controllers/user_session_controller.dart';
 import '../models/app_role.dart';
 import 'login_screen.dart';
@@ -84,7 +85,11 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
       });
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(
+          builder: (_) => widget.selectedRole == AppRole.machineryProvider
+              ? const MachineryProviderDashboardScreen()
+              : const DashboardScreen(),
+        ),
         (route) => false,
       );
     });

@@ -8,7 +8,7 @@ import '../models/mandi_rate_item.dart';
 class MandiApiService {
   static const String _geminiApiKey =
       String.fromEnvironment('GEMINI_API_KEY', defaultValue: ApiConfig.geminiApiKey);
-  static const String _model = "gemini-3.5-flash-lite";
+  static const String _model = "gemini-2.5-flash-lite";
   static const String _geminiEndpoint =
       "https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent?key=$_geminiApiKey";
 
@@ -100,7 +100,7 @@ Return ONLY valid JSON.
             headers: {"Content-Type": "application/json"},
             body: requestBody,
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 4));
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(utf8.decode(response.bodyBytes));
@@ -132,8 +132,11 @@ Return ONLY valid JSON.
 
     // Fallback to officially notified Government Rates for major Pakistani cities
     lastFetchWasLive = false;
-    return _filterRates(
+    final fallbackRates = _filterRates(
         _getOfficialCertifiedGovtRates(), city, category, govtOnly);
+    if (fallbackRates.isNotEmpty) return fallbackRates;
+    return _filterRates(
+        _getOfficialCertifiedGovtRates(), null, category, govtOnly);
   }
 
   static List<MandiRateItem> _filterRates(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'core/localization/language_controller.dart';
+import 'core/services/firebase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/screens/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseService.initialize();
   runApp(const SabzDostApp());
 }
 

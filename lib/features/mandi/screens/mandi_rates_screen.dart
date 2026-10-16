@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/localization/language_controller.dart';
+import '../../../core/services/gemini_smart_input_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/gemini_smart_search_bar.dart';
 import '../models/mandi_rate_item.dart';
 import '../services/mandi_api_service.dart';
 
@@ -31,8 +33,8 @@ class _MandiRatesScreenState extends State<MandiRatesScreen> {
   String _selectedCity = "All Major Cities";
   CropCategory _selectedCategory = CropCategory.all;
   bool _govtOnlyFilter = false;
-  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
+  SmartCorrectionResult? _currentAiCorrection;
 
   bool _isLoading = true;
   List<MandiRateItem> _ratesList = [];
@@ -46,7 +48,6 @@ class _MandiRatesScreenState extends State<MandiRatesScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -98,14 +99,54 @@ class _MandiRatesScreenState extends State<MandiRatesScreen> {
   }
 
   List<MandiRateItem> get _filteredRates {
-    return _ratesList.where((item) {
-      final matchesSearch = _searchQuery.isEmpty ||
-          item.cropEnglish.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          item.cropUrdu.contains(_searchQuery) ||
-          item.mandiCityEnglish.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          item.mandiCityUrdu.contains(_searchQuery);
+    final q = _searchQuery.toLowerCase().trim();
+    final ai = _currentAiCorrection;
 
-      return matchesSearch;
+    final searchTerms = <String>{};
+    if (q.isNotEmpty) {
+      searchTerms.add(q);
+      searchTerms.addAll(q.split(' '));
+    }
+    if (ai != null) {
+      if (ai.correctedEnglish.isNotEmpty) {
+        searchTerms.add(ai.correctedEnglish.toLowerCase());
+        searchTerms.addAll(ai.correctedEnglish.toLowerCase().split(' '));
+      }
+      if (ai.correctedUrdu.isNotEmpty) {
+        searchTerms.add(ai.correctedUrdu);
+        searchTerms.addAll(ai.correctedUrdu.split(' '));
+      }
+      for (final kw in ai.searchKeywords) {
+        final k = kw.toLowerCase().trim();
+        if (k.isNotEmpty) {
+          searchTerms.add(k);
+          searchTerms.addAll(k.split(' '));
+        }
+      }
+    }
+    searchTerms.removeWhere((t) => t.length <= 1);
+
+    return _ratesList.where((item) {
+      if (searchTerms.isEmpty) return true;
+
+      final enCrop = item.cropEnglish.toLowerCase();
+      final urCrop = item.cropUrdu.toLowerCase();
+      final enCity = item.mandiCityEnglish.toLowerCase();
+      final urCity = item.mandiCityUrdu.toLowerCase();
+      final enCat = item.categoryEnglish.toLowerCase();
+      final urCat = item.categoryUrdu.toLowerCase();
+
+      for (final term in searchTerms) {
+        if (enCrop.contains(term) ||
+            urCrop.contains(term) ||
+            enCity.contains(term) ||
+            urCity.contains(term) ||
+            enCat.contains(term) ||
+            urCat.contains(term)) {
+          return true;
+        }
+      }
+      return false;
     }).toList();
   }
 
@@ -114,178 +155,202 @@ class _MandiRatesScreenState extends State<MandiRatesScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredList = _filteredRates;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleSpacing: 20,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                _isUrdu ? "سرکاری و منڈی نرخ" : "Live Mandi Rates",
-                style: _isUrdu
-                    ? AppTheme.urdu(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      )
-                    : AppTheme.english(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-              ),
-            ),
-            const SizedBox(height: 3),
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: MandiApiService.lastFetchWasLive
-                        ? AppColors.successGreen
-                        : AppColors.accentGold,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    MandiApiService.lastFetchWasLive
-                        ? (_isUrdu
-                            ? "لائیو منڈی ریٹس (AI) • اپڈیٹ $_lastSyncedTime"
-                            : "Live Mandi Rates (AI) • Updated $_lastSyncedTime")
-                        : (_isUrdu
-                            ? "سرکاری مصدقہ ریٹس • اپڈیٹ $_lastSyncedTime"
-                            : "Official Certified Rates • Updated $_lastSyncedTime"),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _isUrdu
-                        ? AppTheme.urdu(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textMuted,
-                          )
-                        : AppTheme.english(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMuted,
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => _loadMandiRates(forceRefresh: true),
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryDark),
-            tooltip: _isUrdu ? "ریٹ ریفریش کریں" : "Refresh Rates",
-          ),
-          const SizedBox(width: 10),
-        ],
-      ),
       body: RefreshIndicator(
         color: AppColors.primaryDark,
         backgroundColor: AppColors.surface,
         onRefresh: () => _loadMandiRates(forceRefresh: true),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search Input & City Dropdown
-              Row(
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverAppBar(
+              pinned: !isLandscape,
+              floating: isLandscape,
+              snap: isLandscape,
+              toolbarHeight: headerHeight,
+              backgroundColor: AppColors.surface,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              automaticallyImplyLeading: true,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  color: AppColors.borderLight.withValues(alpha: 0.7),
+                  height: 1,
+                ),
+              ),
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) {
-                          setState(() {
-                            _searchQuery = val.trim();
-                          });
-                        },
-                        style: _isUrdu
-                            ? AppTheme.urdu(fontSize: 12, color: AppColors.textDark)
-                            : AppTheme.english(fontSize: 13, color: AppColors.textDark),
-                        decoration: InputDecoration(
-                          hintText: _isUrdu ? "فصل یا جنس تلاش کریں..." : "Search crop or commodity...",
-                          hintStyle: _isUrdu
-                              ? AppTheme.urdu(fontSize: 11, color: AppColors.textLight)
-                              : AppTheme.english(fontSize: 11, color: AppColors.textLight),
-                          prefixIcon: const Icon(Icons.search_rounded,
-                              color: AppColors.textMuted, size: 20),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: MandiApiService.lastFetchWasLive
+                          ? AppColors.successGreen
+                          : AppColors.accentGold,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 10),
-
-                  // City Dropdown
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedCity,
-                        icon: const Icon(Icons.location_on_rounded,
-                            size: 16, color: AppColors.primaryDark),
-                        style: AppTheme.english(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark),
-                        items: _majorCities.map((city) {
-                          String label = city;
-                          if (city == "All Major Cities") {
-                            label = _isUrdu ? "تمام شہر" : "All Cities";
-                          }
-                          return DropdownMenuItem(
-                            value: city,
-                            child: Text(
-                              label,
-                              overflow: TextOverflow.ellipsis,
-                              style: _isUrdu ? AppTheme.urdu(fontSize: 11) : AppTheme.english(fontSize: 11),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() {
-                              _selectedCity = val;
-                            });
-                            _loadMandiRates();
-                          }
-                        },
-                      ),
-                    ),
+                  const SizedBox(width: 7),
+                  Text(
+                    _isUrdu ? "سرکاری و منڈی نرخ" : "Live Mandi Rates",
+                    style: _isUrdu
+                        ? AppTheme.urdu(
+                            fontSize: isLandscape ? 14 : 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          )
+                        : AppTheme.english(
+                            fontSize: isLandscape ? 14 : 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                            letterSpacing: -0.3,
+                          ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              actions: [
+                IconButton(
+                  onPressed: () => _loadMandiRates(forceRefresh: true),
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryDark, size: 20),
+                  tooltip: _isUrdu ? "ریٹ ریفریش کریں" : "Refresh Rates",
+                ),
+                const SizedBox(width: 6),
+              ],
+            ),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLandscape ? 24.0 : 20.0,
+                vertical: isLandscape ? 10.0 : 14.0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Subtitle / sync status chip
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          MandiApiService.lastFetchWasLive
+                              ? (_isUrdu
+                                  ? "لائیو منڈی ریٹس (AI) • اپڈیٹ $_lastSyncedTime"
+                                  : "Live Mandi Rates (AI) • Updated $_lastSyncedTime")
+                              : (_isUrdu
+                                  ? "سرکاری مصدقہ ریٹس • اپڈیٹ $_lastSyncedTime"
+                                  : "Official Certified Rates • Updated $_lastSyncedTime"),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _isUrdu
+                              ? AppTheme.urdu(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMuted,
+                                )
+                              : AppTheme.english(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMuted,
+                                ),
+                        ),
+                      ),
+                    ),
+                    // Gemini AI Smart Search Bar (autocorrects Roman Urdu & typos to Urdu/English)
+                    GeminiSmartSearchBar(
+                      domainContext: "Mandi rates, Punjab agriculture markets, wheat, cotton, rice, corn, vegetables, fruits in Pakistan",
+                      hintText: _isUrdu ? "فصل یا جنس تلاش..." : "Search mandi crops...",
+                      onSearchChanged: (query, aiResult) {
+                        setState(() {
+                          _searchQuery = query;
+                          _currentAiCorrection = aiResult;
+                        });
+                      },
+                      onSubmitted: (query, aiResult) {
+                        setState(() {
+                          _searchQuery = query;
+                          _currentAiCorrection = aiResult;
+                        });
+                      },
+                      onClear: () {
+                        setState(() {
+                          _searchQuery = "";
+                          _currentAiCorrection = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // City Selector Row
+                    Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded,
+                              size: 18, color: AppColors.primaryDark),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isUrdu ? "منڈی کا شہر:" : "Market City:",
+                            style: _isUrdu
+                                ? AppTheme.urdu(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted)
+                                : AppTheme.english(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                          ),
+                          const Spacer(),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedCity,
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                                  size: 20, color: AppColors.primaryDark),
+                              style: AppTheme.english(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textDark),
+                              items: _majorCities.map((city) {
+                                String label = city;
+                                if (city == "All Major Cities") {
+                                  label = _isUrdu ? "تمام شہر" : "All Cities";
+                                }
+                                return DropdownMenuItem(
+                                  value: city,
+                                  child: Text(
+                                    label,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: _isUrdu ? AppTheme.urdu(fontSize: 11) : AppTheme.english(fontSize: 11),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedCity = val;
+                                  });
+                                  _loadMandiRates();
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
               // Government Official Price Filter Switch Bar
               Container(
@@ -463,8 +528,11 @@ class _MandiRatesScreenState extends State<MandiRatesScreen> {
                   },
                 ),
               const SizedBox(height: 24),
-            ],
-          ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

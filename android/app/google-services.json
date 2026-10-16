@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "276136067728",
+    "project_id": "sabzdost-513bc",
+    "storage_bucket": "sabzdost-513bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:276136067728:android:8b9e8687b875b163598e15",
+        "android_client_info": {
+          "package_name": "com.example.sabzdost"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2-Cptk6pfCxdLXJIs_aK3k7BQWag9GlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

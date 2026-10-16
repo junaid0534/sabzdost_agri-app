@@ -3,6 +3,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../home/screens/dashboard_screen.dart';
+import '../../machinery/screens/machinery_provider_dashboard_screen.dart';
+import '../controllers/user_session_controller.dart';
+import '../models/app_role.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,8 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
+      final role = UserSessionController.instance.activeRole;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(
+          builder: (_) => role == AppRole.machineryProvider
+              ? const MachineryProviderDashboardScreen()
+              : const DashboardScreen(),
+        ),
       );
     });
   }

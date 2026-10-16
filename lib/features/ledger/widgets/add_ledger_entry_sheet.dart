@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/gemini_input_assistant_sheet.dart';
 import '../models/ledger_entry.dart';
 
 class AddLedgerEntrySheet extends StatefulWidget {
@@ -603,21 +604,51 @@ class _AddLedgerEntrySheetState extends State<AddLedgerEntrySheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _entryType == LedgerEntryType.income
-                            ? (isUrdu ? "خریدار / منڈی کا نام:" : "Buyer / Mandi Name:")
-                            : (isUrdu ? "دکاندار / ڈیلر کا نام:" : "Vendor / Store Name:"),
-                        style: isUrdu
-                            ? AppTheme.urdu(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
-                              )
-                            : AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textDark,
-                              ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _entryType == LedgerEntryType.income
+                                  ? (isUrdu ? "خریدار / منڈی کا نام:" : "Buyer / Mandi Name:")
+                                  : (isUrdu ? "دکاندار / ڈیلر کا نام:" : "Vendor / Store Name:"),
+                              style: isUrdu
+                                  ? AppTheme.urdu(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textDark,
+                                    )
+                                  : AppTheme.english(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textDark,
+                                    ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              GeminiInputAssistantSheet.show(
+                                context: context,
+                                initialText: _partyController.text,
+                                title: isUrdu ? "خریدار / ڈیلر نام AI اسسٹنٹ" : "Party Name AI",
+                                hintText: isUrdu
+                                    ? "یہاں نام لکھیں..."
+                                    : "Write name here...",
+                                domainContext: "Agriculture dealer, grain market, seed store",
+                                onSelected: (corrected, _) {
+                                  setState(() {
+                                    _partyController.text = corrected;
+                                  });
+                                },
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              child: Icon(Icons.auto_awesome_rounded, size: 15, color: AppColors.primaryDark),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Container(
@@ -630,8 +661,8 @@ class _AddLedgerEntrySheetState extends State<AddLedgerEntrySheet> {
                           controller: _partyController,
                           decoration: InputDecoration(
                             hintText: _entryType == LedgerEntryType.income
-                                ? (isUrdu ? "مثلاً غلہ منڈی یا خریدار" : "e.g. Grain Market / Buyer")
-                                : (isUrdu ? "مثلاً ایگری کھاد اسٹور" : "e.g. Agri Store"),
+                                ? (isUrdu ? "غلہ منڈی یا خریدار..." : "Grain market or buyer...")
+                                : (isUrdu ? "ایگری کھاد اسٹور..." : "Agri fertilizer store..."),
                             hintStyle: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             border: InputBorder.none,
@@ -646,20 +677,74 @@ class _AddLedgerEntrySheetState extends State<AddLedgerEntrySheet> {
             ),
             const SizedBox(height: 16),
 
-            // Note / Description
-            Text(
-              isUrdu ? "تفصیل یا اضافی نوٹ (اختیاری):" : "Details or Note (Optional):",
-              style: isUrdu
-                  ? AppTheme.urdu(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
-                    )
-                  : AppTheme.english(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
+            // Note / Description with Gemini Assistant
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isUrdu ? "تفصیل یا اضافی نوٹ (اختیاری):" : "Details or Note (Optional):",
+                  style: isUrdu
+                      ? AppTheme.urdu(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        )
+                      : AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                ),
+                InkWell(
+                  onTap: () {
+                    GeminiInputAssistantSheet.show(
+                      context: context,
+                      initialText: _noteController.text,
+                      title: isUrdu ? "سبز دوست AI نوٹ اسسٹنٹ" : "SabzDost AI Note Assistant",
+                      hintText: isUrdu
+                          ? "یہاں نوٹ لکھیں..."
+                          : "Write note here...",
+                      domainContext:
+                          "Farm ledger transaction note, fertilizers, seed, pesticide, wheat harvest, crop sale in Pakistan",
+                      onSelected: (corrected, _) {
+                        setState(() {
+                          _noteController.text = corrected;
+                        });
+                      },
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryDark.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryDark.withValues(alpha: 0.2)),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.primaryDark),
+                        const SizedBox(width: 4),
+                        Text(
+                          isUrdu ? "AI ٹھیک کریں" : "AI Fix",
+                          style: isUrdu
+                              ? AppTheme.urdu(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryDark,
+                                )
+                              : AppTheme.english(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryDark,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 6),
             Container(
@@ -674,11 +759,11 @@ class _AddLedgerEntrySheetState extends State<AddLedgerEntrySheet> {
                 decoration: InputDecoration(
                   hintText: _entryType == LedgerEntryType.income
                       ? (isUrdu
-                          ? "مثلاً 60000 کی فصل بیچی، 30000 وصول، 30000 باقی"
-                          : "e.g. 60k sold, 30k received, 30k remaining")
+                          ? "فصل فروخت تفصیل نوٹ..."
+                          : "Sale details or note...")
                       : (isUrdu
-                          ? "مثلاً 3 بوری یوریا، 5000 ادھار بقایا"
-                          : "e.g. 3 bags urea, partial credit"),
+                          ? "خرچہ یا ادھار تفصیل..."
+                          : "Expense or credit note..."),
                   hintStyle: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                   contentPadding: const EdgeInsets.all(12),
                   border: InputBorder.none,

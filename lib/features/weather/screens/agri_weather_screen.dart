@@ -263,159 +263,194 @@ class _AgriWeatherScreenState extends State<AgriWeatherScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleSpacing: 18,
-        title: Text(
-          _isUrdu ? "موسم" : "Weather",
-          style: _isUrdu
-              ? AppTheme.urdu(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                )
-              : AppTheme.english(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textDark,
-                  letterSpacing: -0.5,
-                ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: InkWell(
-              onTap: _showCityPicker,
-              borderRadius: BorderRadius.circular(22),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: AppColors.primaryMedium.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      size: 14,
-                      color: AppColors.primaryMedium,
-                    ),
-                    const SizedBox(width: 4),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 110),
-                      child: Text(
-                        _isUrdu ? _selectedCity.nameUrdu : _selectedCity.nameEnglish,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _isUrdu
-                            ? AppTheme.urdu(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
-                              )
-                            : AppTheme.english(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryDark,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 16,
-                      color: AppColors.primaryMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         color: AppColors.primaryDark,
         onRefresh: () => _loadWeather(forceRefresh: true),
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryDark),
-              )
-            : _report == null
-                ? Center(
-                    child: Text(
-                      _isUrdu
-                          ? "موسم کا ڈیٹا لوڈ نہ ہو سکا"
-                          : "Unable to load weather data",
-                      style: AppTheme.urdu(fontSize: 14),
-                    ),
-                  )
-                : SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18.0, vertical: 14.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Current Live Weather Hero Card (Compact)
-                        _buildCurrentWeatherCard(_report!),
-                        const SizedBox(height: 12),
-
-                        // 2. Smart Agricultural Spray Advisory Card (Concise)
-                        _buildSprayAdvisoryCard(_report!.sprayAdvisory),
-                        const SizedBox(height: 12),
-
-                        // 3. Irrigation Recommendation Card (Compact)
-                        _buildIrrigationCard(_report!.irrigationAdvisory),
-                        const SizedBox(height: 16),
-
-                        // 4. Hourly Forecast
-                        Text(
-                          _isUrdu ? "گھنٹہ وار پیشگوئی" : "Hourly Forecast",
-                          style: _isUrdu
-                              ? AppTheme.urdu(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                )
-                              : AppTheme.english(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textDark,
-                                ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverAppBar(
+              pinned: !isLandscape,
+              floating: isLandscape,
+              snap: isLandscape,
+              toolbarHeight: headerHeight,
+              backgroundColor: AppColors.surface,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              automaticallyImplyLeading: true,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  color: AppColors.borderLight.withValues(alpha: 0.7),
+                  height: 1,
+                ),
+              ),
+              title: Text(
+                _isUrdu ? "زرعی موسم" : "Agri Weather",
+                style: _isUrdu
+                    ? AppTheme.urdu(
+                        fontSize: isLandscape ? 14 : 15.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      )
+                    : AppTheme.english(
+                        fontSize: isLandscape ? 14 : 15.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.3,
+                      ),
+              ),
+              actions: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLandscape ? 10 : 14,
+                    vertical: isLandscape ? 4 : 6,
+                  ),
+                  child: InkWell(
+                    onTap: _showCityPicker,
+                    borderRadius: BorderRadius.circular(22),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: AppColors.primaryMedium.withValues(alpha: 0.25),
                         ),
-                        const SizedBox(height: 8),
-                        _buildHourlyList(_report!.hourlyForecast),
-                        const SizedBox(height: 16),
-
-                        // 5. 7-Day Agriculture Forecast
-                        Text(
-                          _isUrdu ? "۷ روزہ زرعی موسم" : "7-Day Agri Forecast",
-                          style: _isUrdu
-                              ? AppTheme.urdu(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                )
-                              : AppTheme.english(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textDark,
-                                ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildDailyList(_report!.dailyForecast),
-                        const SizedBox(height: 20),
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_on_rounded,
+                            size: 13,
+                            color: AppColors.primaryMedium,
+                          ),
+                          const SizedBox(width: 4),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 100),
+                            child: Text(
+                              _isUrdu ? _selectedCity.nameUrdu : _selectedCity.nameEnglish,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _isUrdu
+                                  ? AppTheme.urdu(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                    )
+                                  : AppTheme.english(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 15,
+                            color: AppColors.primaryMedium,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+              ],
+            ),
+            if (_isLoading)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.primaryDark),
+                ),
+              )
+            else if (_report == null)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    _isUrdu
+                        ? "موسم کا ڈیٹا لوڈ نہ ہو سکا"
+                        : "Unable to load weather data",
+                    style: AppTheme.urdu(fontSize: 14),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLandscape ? 24.0 : 18.0,
+                  vertical: isLandscape ? 10.0 : 14.0,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Current Live Weather Hero Card (Compact)
+                      _buildCurrentWeatherCard(_report!),
+                      const SizedBox(height: 12),
+
+                      // 2. Smart Agricultural Spray Advisory Card (Concise)
+                      _buildSprayAdvisoryCard(_report!.sprayAdvisory),
+                      const SizedBox(height: 12),
+
+                      // 3. Irrigation Recommendation Card (Compact)
+                      _buildIrrigationCard(_report!.irrigationAdvisory),
+                      const SizedBox(height: 16),
+
+                      // 4. Hourly Forecast
+                      Text(
+                        _isUrdu ? "گھنٹہ وار پیشگوئی" : "Hourly Forecast",
+                        style: _isUrdu
+                            ? AppTheme.urdu(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              )
+                            : AppTheme.english(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textDark,
+                              ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildHourlyList(_report!.hourlyForecast),
+                      const SizedBox(height: 16),
+
+                      // 5. 7-Day Agriculture Forecast
+                      Text(
+                        _isUrdu ? "۷ روزہ زرعی موسم" : "7-Day Agri Forecast",
+                        style: _isUrdu
+                            ? AppTheme.urdu(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              )
+                            : AppTheme.english(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textDark,
+                              ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildDailyList(_report!.dailyForecast),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

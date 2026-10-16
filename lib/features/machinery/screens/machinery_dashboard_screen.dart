@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/services/gemini_smart_input_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/gemini_smart_search_bar.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../models/machinery_model.dart';
 import 'machinery_booking_screen.dart';
@@ -8,11 +10,13 @@ import 'machinery_booking_screen.dart';
 class MachineryDashboardScreen extends StatefulWidget {
   final bool isUrdu;
   final String? initialCategory;
+  final String? initialSearch;
 
   const MachineryDashboardScreen({
     super.key,
     this.isUrdu = true,
     this.initialCategory,
+    this.initialSearch,
   });
 
   @override
@@ -22,6 +26,7 @@ class MachineryDashboardScreen extends StatefulWidget {
 class _MachineryDashboardScreenState extends State<MachineryDashboardScreen> {
   int _selectedCategoryIndex = 0;
   String _searchQuery = "";
+  SmartCorrectionResult? _currentAiCorrection;
 
   final List<Map<String, dynamic>> _categories = [
     {
@@ -30,9 +35,14 @@ class _MachineryDashboardScreenState extends State<MachineryDashboardScreen> {
       "icon": Icons.apps_rounded,
     },
     {
+      "name": "Tractor",
+      "urdu": "زرعی ٹریکٹر",
+      "icon": Icons.agriculture_rounded,
+    },
+    {
       "name": "Harvester",
       "urdu": "کمبائن ہارویسٹر",
-      "icon": Icons.agriculture_rounded,
+      "icon": Icons.engineering_rounded,
     },
     {
       "name": "Laser Leveler",
@@ -62,6 +72,38 @@ class _MachineryDashboardScreenState extends State<MachineryDashboardScreen> {
   ];
 
   final List<MachineryModel> _allMachines = [
+    const MachineryModel(
+      id: "m_tr1",
+      name: "Millat MF 385 (85HP)",
+      urduName: "ملت میسی ٹریکٹر 385",
+      category: "Tractor",
+      distanceKm: 2.5,
+      rate: 2200,
+      rateUnit: "Hour",
+      ownerName: "حاجی رمضان",
+      ownerPhone: "03009283711",
+      location: "شجاع آباد، ملتان",
+      rating: 4.9,
+      completedJobs: 178,
+      isAvailable: true,
+      imageUrl: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?q=80&w=400&auto=format&fit=crop",
+    ),
+    const MachineryModel(
+      id: "m_tr2",
+      name: "Fiat New Holland 640",
+      urduName: "فیٹ نیو ہالینڈ 640 ٹریکٹر",
+      category: "Tractor",
+      distanceKm: 4.8,
+      rate: 2000,
+      rateUnit: "Hour",
+      ownerName: "رانا کامران",
+      ownerPhone: "03027819203",
+      location: "کبیروالا",
+      rating: 4.8,
+      completedJobs: 142,
+      isAvailable: true,
+      imageUrl: "https://images.unsplash.com/photo-1595009552535-be753447727e?q=80&w=400&auto=format&fit=crop",
+    ),
     const MachineryModel(
       id: "m1",
       name: "Claas Crop Tiger 30",
@@ -147,6 +189,9 @@ class _MachineryDashboardScreenState extends State<MachineryDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchQuery = widget.initialSearch!;
+    }
     if (widget.initialCategory != null && widget.initialCategory!.isNotEmpty) {
       final index = _categories.indexWhere((c) => c["name"] == widget.initialCategory);
       if (index != -1) {
@@ -156,96 +201,170 @@ class _MachineryDashboardScreenState extends State<MachineryDashboardScreen> {
   }
 
   List<MachineryModel> get _filteredMachines {
+    final query = _searchQuery.toLowerCase().trim();
+    final ai = _currentAiCorrection;
+
+    // Collect all search terms from query and AI correction
+    final searchTerms = <String>{};
+    if (query.isNotEmpty) {
+      searchTerms.add(query);
+      searchTerms.addAll(query.split(' '));
+    }
+    if (ai != null) {
+      if (ai.correctedEnglish.isNotEmpty) {
+        searchTerms.add(ai.correctedEnglish.toLowerCase());
+        searchTerms.addAll(ai.correctedEnglish.toLowerCase().split(' '));
+      }
+      if (ai.correctedUrdu.isNotEmpty) {
+        searchTerms.add(ai.correctedUrdu);
+        searchTerms.addAll(ai.correctedUrdu.split(' '));
+      }
+      for (final kw in ai.searchKeywords) {
+        final k = kw.toLowerCase().trim();
+        if (k.isNotEmpty) {
+          searchTerms.add(k);
+          searchTerms.addAll(k.split(' '));
+        }
+      }
+    }
+    searchTerms.removeWhere((t) => t.length <= 1);
+
     return _allMachines.where((m) {
-      final matchesCategory = _selectedCategoryIndex == 0 ||
-          m.category == _categories[_selectedCategoryIndex]["name"];
-      final matchesCity = _searchQuery.isEmpty ||
-          m.location.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesCategory && matchesCity;
+      final selectedCat = _selectedCategoryIndex == 0
+          ? "All"
+          : _categories[_selectedCategoryIndex]["name"];
+      final matchesCategory = selectedCat == "All" || m.category == selectedCat;
+
+      if (searchTerms.isEmpty) return matchesCategory;
+
+      final nameLow = m.name.toLowerCase();
+      final urduLow = m.urduName.toLowerCase();
+      final catLow = m.category.toLowerCase();
+      final locLow = m.location.toLowerCase();
+
+      bool matchesSearch = false;
+      for (final term in searchTerms) {
+        if (nameLow.contains(term) ||
+            urduLow.contains(term) ||
+            catLow.contains(term) ||
+            locLow.contains(term)) {
+          matchesSearch = true;
+          break;
+        }
+      }
+
+      if (_selectedCategoryIndex == 0) {
+        return matchesSearch;
+      } else {
+        return matchesCategory && matchesSearch;
+      }
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
+
     return ResponsiveLayout(
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryDark, size: 24),
-            onPressed: () => Navigator.maybePop(context),
-          ),
-          centerTitle: true,
-          title: Text(
-            widget.initialCategory ?? "Machinery",
-            style: AppTheme.english(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryDark,
-            ),
-          ),
-        ),
         body: SafeArea(
-          child: Column(
-            children: [
-              // Search by City Only
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(23),
-                    border: Border.all(color: AppColors.borderLight),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+          bottom: false,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                pinned: !isLandscape,
+                floating: isLandscape,
+                snap: isLandscape,
+                toolbarHeight: headerHeight,
+                backgroundColor: AppColors.surface,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                centerTitle: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryDark, size: 20),
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(1),
+                  child: Container(
+                    color: AppColors.borderLight.withValues(alpha: 0.7),
+                    height: 1,
                   ),
-                  child: TextField(
-                    onChanged: (v) {
-                      setState(() {
-                        _searchQuery = v.trim();
-                      });
-                    },
-                    style: AppTheme.english(fontSize: 13, color: AppColors.textDark),
-                    decoration: InputDecoration(
-                      hintText: "Search by City (e.g. Multan, Khanewal)...",
-                      hintStyle: AppTheme.english(fontSize: 12, color: AppColors.textLight),
-                      prefixIcon: const Icon(Icons.location_city_rounded, size: 20, color: AppColors.primaryMedium),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                ),
+                title: Text(
+                  widget.initialCategory ?? "Machinery",
+                  style: AppTheme.english(
+                    fontSize: isLandscape ? 14.5 : 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryDark,
+                    letterSpacing: -0.3,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 6),
+              // Gemini Smart AI Search Bar (Autocorrects Roman Urdu & typos)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLandscape ? 24.0 : 18.0,
+                    vertical: isLandscape ? 6.0 : 8.0,
+                  ),
+                  child: GeminiSmartSearchBar(
+                    initialValue: widget.initialSearch,
+                    domainContext: "Farm machinery, tractors, combine harvesters, laser levelers, spray drones in Punjab Pakistan",
+                    hintText: widget.isUrdu ? "مشین یا شہر تلاش..." : "Search machine, city...",
+                    onSearchChanged: (query, aiResult) {
+                      setState(() {
+                        _searchQuery = query;
+                        _currentAiCorrection = aiResult;
+                      });
+                    },
+                    onSubmitted: (query, aiResult) {
+                      setState(() {
+                        _searchQuery = query;
+                        _currentAiCorrection = aiResult;
+                      });
+                    },
+                    onClear: () {
+                      setState(() {
+                        _searchQuery = "";
+                        _currentAiCorrection = null;
+                      });
+                    },
+                  ),
+                ),
+              ),
 
               // Machinery Cards List
-              Expanded(
-                child: _filteredMachines.isEmpty
-                    ? Center(
-                        child: Text(
-                          "No machinery found in this category",
-                          style: AppTheme.english(color: AppColors.textMuted, fontSize: 13),
-                        ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
-                        itemCount: _filteredMachines.length,
-                        itemBuilder: (context, index) {
-                          final machine = _filteredMachines[index];
-                          return _buildMachineryCard(machine);
-                        },
-                      ),
-              ),
+              if (_filteredMachines.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      "No machinery found in this category",
+                      style: AppTheme.english(color: AppColors.textMuted, fontSize: 13),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLandscape ? 24.0 : 18.0,
+                    vertical: 6.0,
+                  ),
+                  sliver: SliverList.separated(
+                    itemCount: _filteredMachines.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final machine = _filteredMachines[index];
+                      return _buildMachineryCard(machine);
+                    },
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
         ),

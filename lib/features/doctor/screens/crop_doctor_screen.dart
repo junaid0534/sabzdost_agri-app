@@ -247,69 +247,87 @@ class _CropDoctorScreenState extends State<CropDoctorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
+
     return Directionality(
       textDirection: _isUrdu ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          centerTitle: true,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(
-              color: AppColors.borderLight.withValues(alpha: 0.7),
-              height: 1,
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: !isLandscape,
+              floating: isLandscape,
+              snap: isLandscape,
+              toolbarHeight: headerHeight,
+              backgroundColor: AppColors.surface,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: true,
+              automaticallyImplyLeading: true,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  color: AppColors.borderLight.withValues(alpha: 0.7),
+                  height: 1,
+                ),
+              ),
+              title: Text(
+                _isUrdu ? "اے آئی فصل ڈاکٹر" : "AI Crop Doctor",
+                textAlign: TextAlign.center,
+                style: _isUrdu
+                    ? AppTheme.urdu(
+                        fontSize: isLandscape ? 14.5 : 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      )
+                    : AppTheme.english(
+                        fontSize: isLandscape ? 14.5 : 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.3,
+                      ),
+              ),
             ),
-          ),
-          title: Text(
-            _isUrdu ? "اے آئی فصل ڈاکٹر" : "AI Crop Doctor",
-            textAlign: TextAlign.center,
-            style: _isUrdu
-                ? AppTheme.urdu(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                  )
-                : AppTheme.english(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textDark,
-                    letterSpacing: -0.4,
-                  ),
-          ),
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top Camera Viewfinder Zone
-              _buildViewfinderZone(),
-              const SizedBox(height: 16),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isLandscape ? 24.0 : 20.0,
+                vertical: isLandscape ? 10.0 : 16.0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Top Camera Viewfinder Zone
+                    _buildViewfinderZone(),
+                    const SizedBox(height: 16),
 
-              // Retry Card if scan failed due to connection/server (retains photo!)
-              if (_hasScanError && _selectedImage != null) ...[
-                _buildRetryCard(),
-                const SizedBox(height: 16),
-              ],
+                    // Retry Card if scan failed due to connection/server (retains photo!)
+                    if (_hasScanError && _selectedImage != null) ...[
+                      _buildRetryCard(),
+                      const SizedBox(height: 16),
+                    ],
 
-              // Diagnostic Result Card (When available)
-              if (_result != null) ...[
-                _buildResultCard(_result!),
-                const SizedBox(height: 20),
-              ],
+                    // Diagnostic Result Card (When available)
+                    if (_result != null) ...[
+                      _buildResultCard(_result!),
+                      const SizedBox(height: 20),
+                    ],
 
-              // Quick Tips Banner
-              _buildPhotographyTipsCard(),
-              const SizedBox(height: 20),
+                    // Quick Tips Banner
+                    _buildPhotographyTipsCard(),
+                    const SizedBox(height: 20),
 
-              // Recent Scan History
-              _buildRecentScansSection(),
-              const SizedBox(height: 20),
-            ],
-          ),
+                    // Recent Scan History
+                    _buildRecentScansSection(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

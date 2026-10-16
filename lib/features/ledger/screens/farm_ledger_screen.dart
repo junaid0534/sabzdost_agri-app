@@ -207,6 +207,8 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isUrdu = _isUrdu;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
 
     return ResponsiveLayout(
       child: Scaffold(
@@ -242,32 +244,45 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
           slivers: [
             // Compact Header AppBar with Back Arrow and Centered Title
             SliverAppBar(
-              pinned: true,
+              pinned: !isLandscape,
+              floating: isLandscape,
+              snap: isLandscape,
+              toolbarHeight: headerHeight,
               backgroundColor: AppColors.surface,
               elevation: 0,
-              expandedHeight: 52,
+              scrolledUnderElevation: 0,
               centerTitle: true,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 22),
-                onPressed: () => Navigator.maybePop(context),
+              leading: Navigator.canPop(context)
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textDark, size: 20),
+                      onPressed: () => Navigator.maybePop(context),
+                    )
+                  : null,
+              automaticallyImplyLeading: false,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  color: AppColors.borderLight.withValues(alpha: 0.7),
+                  height: 1,
+                ),
               ),
               title: Text(
                 isUrdu ? "فصل وار کھاتہ" : "Crop-wise Khata",
                 style: isUrdu
                     ? AppTheme.urdu(
-                        fontSize: 15,
+                        fontSize: isLandscape ? 14 : 15,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       )
                     : AppTheme.english(
-                        fontSize: 15,
+                        fontSize: isLandscape ? 14 : 15,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.download_rounded, size: 19, color: AppColors.primaryDark),
+                  icon: const Icon(Icons.download_rounded, size: 18, color: AppColors.primaryDark),
                   tooltip: isUrdu ? "رپورٹ" : "Report",
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(

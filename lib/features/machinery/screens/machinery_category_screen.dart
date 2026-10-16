@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import 'machinery_dashboard_screen.dart';
+import 'machinery_provider_dashboard_screen.dart';
 
 class MachineryCategoryScreen extends StatelessWidget {
   final bool isUrdu;
@@ -101,113 +102,172 @@ class MachineryCategoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double headerHeight = isLandscape ? 40 : 46;
+
     return ResponsiveLayout(
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: AppColors.primaryDark,
-              size: 18,
-            ),
-            onPressed: () => Navigator.maybePop(context),
-          ),
-          centerTitle: true,
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryDark,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryDark.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.eco_rounded,
-                  color: AppColors.accentLime,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "SabzDost",
-                style: AppTheme.english(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
-                  letterSpacing: -0.4,
-                ),
-              ),
-            ],
-          ),
-        ),
         body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header title banner
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          bottom: false,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                pinned: !isLandscape,
+                floating: isLandscape,
+                snap: isLandscape,
+                toolbarHeight: headerHeight,
+                backgroundColor: AppColors.surface,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                centerTitle: true,
+                leading: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: AppColors.primaryDark,
+                    size: 18,
+                  ),
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(1),
+                  child: Container(
+                    color: AppColors.borderLight.withValues(alpha: 0.7),
+                    height: 1,
+                  ),
+                ),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Select Machinery Type",
-                          style: AppTheme.english(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryDark,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        Text(
-                          "مشینری منتخب کریں",
-                          style: AppTheme.urdu(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryMedium,
-                          ),
-                        ),
-                      ],
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        color: AppColors.accentLime,
+                        size: 16,
+                      ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(width: 7),
                     Text(
-                      "Choose the equipment category you want to hire or book",
+                      "SabzDost",
                       style: AppTheme.english(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                        fontSize: isLandscape ? 14.5 : 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+
+              // Header title banner & Provider entry
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLandscape ? 24.0 : 20.0,
+                    vertical: isLandscape ? 6.0 : 8.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Select Machinery Type",
+                            style: AppTheme.english(
+                              fontSize: isLandscape ? 15 : 17,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryDark,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          Text(
+                            "مشینری منتخب کریں",
+                            style: AppTheme.urdu(
+                              fontSize: isLandscape ? 11.5 : 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        "Choose the equipment category you want to hire or book",
+                        style: AppTheme.english(
+                          fontSize: 11.5,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const MachineryProviderDashboardScreen(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.greenGradient,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryDark.withValues(alpha: 0.14),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.business_center_rounded, color: AppColors.accentLime, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "مشینری پرووائیڈر ہیں؟ اپنا ڈیش بورڈ کھولیں",
+                                    style: AppTheme.urdu(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                                  ),
+                                ],
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
               // Categories Grid / List
-              Expanded(
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isLandscape ? 24.0 : 18.0,
+                  vertical: 6.0,
+                ),
+                sliver: SliverList.separated(
                   itemCount: categories.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final item = categories[index];
                     return _buildCategoryCard(context, item);
                   },
                 ),
               ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
         ),
