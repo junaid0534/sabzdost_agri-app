@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
-import '../../home/screens/dashboard_screen.dart';
-import '../../machinery/screens/machinery_provider_dashboard_screen.dart';
-import '../controllers/user_session_controller.dart';
 import '../models/app_role.dart';
+import 'email_verification_screen.dart';
 import 'login_screen.dart';
 
 class SignupFormScreen extends StatefulWidget {
@@ -29,7 +28,10 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _districtController = TextEditingController(text: "Multan");
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _shopNameController = TextEditingController();
+  final TextEditingController _licenseNoController = TextEditingController();
 
+  bool _isLicenseUploaded = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -60,39 +62,79 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
     _emailController.dispose();
     _districtController.dispose();
     _passwordController.dispose();
+    _shopNameController.dispose();
+    _licenseNoController.dispose();
     super.dispose();
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (!mounted) return;
+    try {
+      final shopName = _shopNameController.text.trim().isNotEmpty
+          ? _shopNameController.text.trim()
+          : (widget.selectedRole == AppRole.seedFertilizerDealer
+              ? "Chaudhry Agri Seeds & Fertilizer"
+              : "");
 
-      UserSessionController.instance.registerUser(
+      await AuthService.instance.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
         role: widget.selectedRole,
         district: _districtController.text.trim(),
+        businessOrFarmName: shopName,
+        licenseNo: _licenseNoController.text.trim(),
       );
+
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Account created! Verification link sent to your email."),
+          backgroundColor: AppColors.primaryDark,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // Navigate to Email Verification Screen
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => widget.selectedRole == AppRole.machineryProvider
-              ? const MachineryProviderDashboardScreen()
-              : const DashboardScreen(),
+          builder: (_) => EmailVerificationScreen(
+            email: _emailController.text.trim(),
+            selectedRole: widget.selectedRole,
+          ),
         ),
         (route) => false,
       );
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.alertSoftRed,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: "OK",
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
   }
 
   void _showDistrictPicker() {
@@ -375,6 +417,43 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                   _buildDistrictField(),
                   const SizedBox(height: 14),
 
+                  // Dealer Specific Fields: Shop Name, License No, and License Photo
+                  if (widget.selectedRole == AppRole.seedFertilizerDealer) ...[
+                    _buildSimpleField(
+                      label: "Shop / Agency Name",
+                      urduHint: "(دکان یا ایجنسی کا نام)",
+                      controller: _shopNameController,
+                      hint: "e.g. Chaudhry Agri Seeds & Fertilizer",
+                      icon: Icons.storefront_rounded,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return "Please enter your store or agency name";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+
+                    _buildSimpleField(
+                      label: "Agri / FSC&RD License Number",
+                      urduHint: "(زرعی ڈیلر لائسنس نمبر)",
+                      controller: _licenseNoController,
+                      hint: "e.g. FSC-PB-2024-8849",
+                      icon: Icons.badge_outlined,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return "Please enter your official dealer license number";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+
+                    // License Document / Photo Upload Box
+                    _buildLicenseUploadBox(),
+                    const SizedBox(height: 14),
+                  ],
+
                   // 5. Password Field (Last field)
                   _buildPasswordField(),
                   const SizedBox(height: 28),
@@ -652,4 +731,116 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
       ],
     );
   }
+
+  Widget _buildLicenseUploadBox() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "Agri Dealer License Document / Photo",
+              style: AppTheme.english(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textDark,
+              ),
+            ),
+            Text(
+              "(لائسنس کی تصویر اپلوڈ کریں)",
+              style: AppTheme.urdu(
+                fontSize: 10,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: () {
+            setState(() {
+              _isLicenseUploaded = !_isLicenseUploaded;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  _isLicenseUploaded
+                      ? "Agri License photo selected successfully!"
+                      : "License photo removed",
+                ),
+                backgroundColor: AppColors.primaryDark,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: _isLicenseUploaded ? const Color(0xFFF0FDF4) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _isLicenseUploaded ? const Color(0xFF86EFAC) : AppColors.borderLight,
+                style: BorderStyle.solid,
+                width: 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _isLicenseUploaded
+                        ? const Color(0xFFDCFCE7)
+                        : AppColors.primaryMedium.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _isLicenseUploaded ? Icons.task_alt_rounded : Icons.upload_file_rounded,
+                    color: _isLicenseUploaded ? const Color(0xFF16A34A) : AppColors.primaryMedium,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isLicenseUploaded
+                            ? "FSC-License-Multan-2024.jpg (Attached)"
+                            : "Tap to upload license photo or PDF",
+                        style: AppTheme.english(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _isLicenseUploaded ? const Color(0xFF16A34A) : AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isLicenseUploaded
+                            ? "FSC&RD / Punjab Agri Department Certificate"
+                            : "Supported: JPG, PNG, PDF up to 10MB",
+                        style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _isLicenseUploaded ? Icons.edit_rounded : Icons.camera_alt_outlined,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
+

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../home/screens/dashboard_screen.dart';
 import '../../machinery/screens/machinery_provider_dashboard_screen.dart';
+import '../../store/screens/dealer_dashboard_screen.dart';
 import '../controllers/user_session_controller.dart';
 import '../models/app_role.dart';
+import 'email_verification_screen.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -31,28 +34,114 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final id = _identifierController.text.trim();
+    final pass = _passwordController.text.trim();
+
+    // Quick offline demo shortcut for test dealer
+    final isTestDealer = (id.toLowerCase() == "dealer.com" || id.toLowerCase() == "dealer@dealer.com") && pass == "123456";
 
     setState(() {
       _isLoading = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 700), () {
+    if (isTestDealer) {
+      await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
 
-      final role = UserSessionController.instance.activeRole;
+      UserSessionController.instance.registerUser(
+        name: "Haji Asghar Ali",
+        phone: "0300-8472910",
+        role: AppRole.seedFertilizerDealer,
+        district: "Multan",
+        businessOrFarmName: "Chaudhry Agri Seeds & Fertilizer",
+      );
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const DealerDashboardScreen(),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Determine email format
+      String emailToUse = id;
+      if (!emailToUse.contains('@')) {
+        emailToUse = '$emailToUse@sabzdost.com';
+      }
+
+      final role = await AuthService.instance.signIn(
+        email: emailToUse,
+        password: pass,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Welcome back, ${UserSessionController.instance.userName}!"),
+          backgroundColor: AppColors.primaryDark,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => role == AppRole.machineryProvider
               ? const MachineryProviderDashboardScreen()
-              : const DashboardScreen(),
+              : role == AppRole.seedFertilizerDealer
+                  ? const DealerDashboardScreen()
+                  : const DashboardScreen(),
         ),
       );
-    });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (e is EmailNotVerifiedException) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: const Color(0xFFC77800),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: "VERIFY NOW",
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EmailVerificationScreen(
+                      email: e.email,
+                      selectedRole: AppRole.farmer,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: AppColors.alertSoftRed,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: "OK",
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
   }
 
   void _showForgotPasswordSheet() {
@@ -138,19 +227,32 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 46,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  final email = resetController.text.trim();
+                  if (email.isEmpty) return;
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Password reset link / OTP sent successfully",
-                        style: AppTheme.english(fontSize: 12, color: Colors.white),
+                  try {
+                    await AuthService.instance.sendPasswordReset(email);
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Password reset link sent to $email",
+                          style: AppTheme.english(fontSize: 12, color: Colors.white),
+                        ),
+                        backgroundColor: AppColors.primaryDark,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      backgroundColor: AppColors.primaryDark,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
+                    );
+                  } catch (e) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
+                        backgroundColor: AppColors.alertSoftRed,
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryDark,
@@ -463,7 +565,43 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
+
+                    // Quick Testing Pill for Dealer Login
+                    Center(
+                      child: InkWell(
+                        onTap: () {
+                          _identifierController.text = "dealer.com";
+                          _passwordController.text = "123456";
+                          _handleLogin();
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFF16A34A)),
+                              SizedBox(width: 4),
+                              Text(
+                                "Quick Test Dealer (dealer.com / 123456)",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF16A34A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
                     // Sign Up Link
                     Center(

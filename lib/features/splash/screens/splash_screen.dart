@@ -1,9 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/responsive_layout.dart';
+import '../../auth/controllers/user_session_controller.dart';
+import '../../auth/models/app_role.dart';
+import '../../home/screens/dashboard_screen.dart';
+import '../../machinery/screens/machinery_provider_dashboard_screen.dart';
 import '../../onboarding/screens/onboarding_screen.dart';
+import '../../store/screens/dealer_dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -42,8 +48,33 @@ class _SplashScreenState extends State<SplashScreen>
     _navigationTimer = Timer(const Duration(milliseconds: 2200), _goToNext);
   }
 
-  void _goToNext() {
+  Future<void> _goToNext() async {
     if (!mounted) return;
+
+    final isLoggedIn = await AuthService.instance.tryAutoLogin();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      final role = UserSessionController.instance.activeRole;
+      final targetScreen = role == AppRole.seedFertilizerDealer
+          ? const DealerDashboardScreen()
+          : role == AppRole.machineryProvider
+              ? const MachineryProviderDashboardScreen()
+              : const DashboardScreen();
+
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
