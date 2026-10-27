@@ -9,14 +9,13 @@ import '../../doctor/screens/crop_doctor_screen.dart';
 import '../../ledger/screens/farm_ledger_screen.dart';
 import '../../machinery/screens/machinery_category_screen.dart';
 import '../../machinery/screens/machinery_dashboard_screen.dart';
-import '../../mandi/models/mandi_rate_item.dart';
 import '../../mandi/screens/mandi_rates_screen.dart';
-import '../../mandi/services/mandi_api_service.dart';
 import '../../weather/models/weather_models.dart';
 import '../../weather/screens/agri_weather_screen.dart';
 import '../../weather/services/weather_service.dart';
 import '../../store/models/agri_product_model.dart';
 import '../../store/screens/agri_store_screen.dart';
+import 'farmer_settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int initialIndex;
@@ -30,10 +29,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late int _selectedBottomNav;
   bool get _isUrdu => LanguageController.instance.isUrdu;
   AgriWeatherReport? _liveWeather;
-  List<MandiRateItem> _topMandiRates = [];
-  String? _nearbyMandiCity;
-  String? _nearbyMandiCityUrdu;
-  bool _isFetchingMandi = false;
 
   @override
   void initState() {
@@ -47,38 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) {
       setState(() {
         _liveWeather = report;
-        _nearbyMandiCity = report.city.nameEnglish;
-        _nearbyMandiCityUrdu = report.city.nameUrdu;
       });
-      _fetchDashboardMandiRates(city: report.city.nameEnglish);
-    }
-  }
-
-  Future<void> _fetchDashboardMandiRates({String? city}) async {
-    if (_isFetchingMandi) return;
-    _isFetchingMandi = true;
-    try {
-      final targetCity = (city != null && city.isNotEmpty)
-          ? city
-          : (_nearbyMandiCity ??
-              (WeatherService.currentCity.nameEnglish.isNotEmpty
-                  ? WeatherService.currentCity.nameEnglish
-                  : "Punjab"));
-      final rates = await MandiApiService.fetchRates(city: targetCity);
-      if (mounted && rates.isNotEmpty) {
-        setState(() {
-          _topMandiRates = rates.take(4).toList();
-          _nearbyMandiCity = targetCity;
-          if (_liveWeather != null && _liveWeather!.city.nameEnglish == targetCity) {
-            _nearbyMandiCityUrdu = _liveWeather!.city.nameUrdu;
-          } else {
-            _nearbyMandiCityUrdu = WeatherService.currentCity.nameUrdu;
-          }
-        });
-      }
-    } catch (_) {
-    } finally {
-      _isFetchingMandi = false;
     }
   }
 
@@ -100,6 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   showTopModeSwitcher: false,
                 ),
                 MandiRatesScreen(isUrdu: _isUrdu),
+                FarmerSettingsScreen(isUrdu: _isUrdu),
               ],
             ),
             bottomNavigationBar: _buildFloatingBottomNav(),
@@ -113,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildFloatingBottomNav() {
     return Container(
       color: Colors.transparent,
-      padding: const EdgeInsets.only(left: 18, right: 18, bottom: 16, top: 4),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 16, top: 4),
       child: Container(
         height: 68,
         decoration: BoxDecoration(
@@ -150,6 +115,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: Icons.trending_up_rounded,
               label: _isUrdu ? "منڈی" : "Mandi",
             ),
+            _buildNavItem(
+              index: 4,
+              icon: Icons.settings_rounded,
+              label: _isUrdu ? "سیٹنگز" : "Settings",
+            ),
           ],
         ),
       ),
@@ -174,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 16 : 10,
+          horizontal: isSelected ? 12 : 8,
           vertical: 8,
         ),
         decoration: BoxDecoration(
@@ -186,11 +156,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(
               icon,
-              size: 22,
+              size: isSelected ? 24 : 23,
               color: isSelected ? Colors.white : AppColors.textLight,
             ),
             if (isSelected) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
                 label,
                 style: _isUrdu
@@ -201,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       )
                     : AppTheme.english(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                       ),
               ),
@@ -241,21 +211,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildHeroVisualBanner(),
             SizedBox(height: isLandscape ? 12 : 18),
 
-            // 3. 4-MENU QUICK NAVIGATION (Crop Khata, AI Doctor, Mandi, Machinery)
+            // 3. 4x2 QUICK NAVIGATION (8 Shortcuts: Khata, Doctor, Mandi, Machinery, Seeds, Fertilizer, Sprays, Settings)
             _buildFourMenuGrid(),
             SizedBox(height: isLandscape ? 14 : 20),
 
             // 4. AI CROP DOCTOR SCAN BANNER
             _buildAiDoctorCard(),
-            SizedBox(height: isLandscape ? 14 : 20),
-
-            // 5. LIVE MANDI PRICE HIGHLIGHTS (Real-time Mandi Rates)
-            _buildLiveMandiSection(),
-            SizedBox(height: isLandscape ? 14 : 20),
-
-            // 6. FARM LEDGER & AGRI ADVISORY SPOTLIGHT
-            _buildAgriAdvisoryAndKhataSection(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -775,7 +737,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
             ),
             Text(
-              _isUrdu ? "7 اہم مینیو" : "7 Shortcuts",
+              _isUrdu ? "8 اہم مینیو" : "8 Shortcuts",
               style: _isUrdu
                   ? AppTheme.urdu(
                       fontSize: 10.5,
@@ -871,13 +833,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         const SizedBox(height: 8),
 
-        // ROW 2: 3 AGRI STORE INPUTS (بیج، کھاد، سپرے)
+        // ROW 2: 4 AGRI STORE INPUTS & SETTINGS (بیج، کھاد، سپرے، سیٹنگز)
         Row(
           children: [
             // 5. بیج (Seeds)
             Expanded(
               child: _buildSingleRowActionItem(
-                title: _isUrdu ? "بیج (Seeds)" : "Seeds",
+                title: _isUrdu ? "بیج" : "Seeds",
                 icon: Icons.spa_rounded,
                 iconColor: const Color(0xFF2E7D32),
                 bgColor: const Color(0xFFE8F5E9),
@@ -898,7 +860,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // 6. کھادیں (Fertilizers)
             Expanded(
               child: _buildSingleRowActionItem(
-                title: _isUrdu ? "کھاد (Fertilizer)" : "Fertilizers",
+                title: _isUrdu ? "کھاد" : "Fertilizers",
                 icon: Icons.science_rounded,
                 iconColor: const Color(0xFF00838F),
                 bgColor: const Color(0xFFE0F7FA),
@@ -916,10 +878,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(width: 8),
 
-            // 7. سپرے و زہریں (Sprays & Pesticides)
+            // 7. سپرے و زہریں (Sprays)
             Expanded(
               child: _buildSingleRowActionItem(
-                title: _isUrdu ? "سپرے (Sprays)" : "Sprays",
+                title: _isUrdu ? "سپرے" : "Sprays",
                 icon: Icons.sanitizer_rounded,
                 iconColor: const Color(0xFFE65100),
                 bgColor: const Color(0xFFFFF3E0),
@@ -932,6 +894,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                   );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // 8. سیٹنگز (Settings)
+            Expanded(
+              child: _buildSingleRowActionItem(
+                title: _isUrdu ? "سیٹنگز" : "Settings",
+                icon: Icons.settings_rounded,
+                iconColor: const Color(0xFF37474F),
+                bgColor: const Color(0xFFECEFF1),
+                onTap: () {
+                  setState(() {
+                    _selectedBottomNav = 4; // Settings Tab
+                  });
                 },
               ),
             ),
@@ -1139,542 +1117,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  // --- LIVE MANDI COMMODITY HIGHLIGHTS ---
-  Widget _buildLiveMandiSection() {
-    final defaultCityUrdu = _nearbyMandiCityUrdu ?? _liveWeather?.city.nameUrdu ?? "ملتان";
-    final defaultCityEnglish = _nearbyMandiCity ?? _liveWeather?.city.nameEnglish ?? "Multan";
-
-    final defaultGandum = MandiRateItem(
-      id: "wheat_def",
-      cropEnglish: "Wheat",
-      cropUrdu: "گندم",
-      categoryEnglish: "Grains",
-      categoryUrdu: "غلہ",
-      category: CropCategory.grains,
-      mandiCityEnglish: defaultCityEnglish,
-      mandiCityUrdu: defaultCityUrdu,
-      minRate: 4150,
-      maxRate: 4350,
-      avgRate: 4250,
-      changeAmount: 100,
-      changePercentage: 2.4,
-      isUp: true,
-      unitUrdu: "۴۰ کلو",
-      unitEnglish: "40 kg",
-      icon: Icons.grain_rounded,
-    );
-
-    final defaultCotton = MandiRateItem(
-      id: "cotton_def",
-      cropEnglish: "Cotton",
-      cropUrdu: "کپاس",
-      categoryEnglish: "Cash Crops",
-      categoryUrdu: "نقد آور",
-      category: CropCategory.cashCrops,
-      mandiCityEnglish: defaultCityEnglish,
-      mandiCityUrdu: defaultCityUrdu,
-      minRate: 8600,
-      maxRate: 9100,
-      avgRate: 8850,
-      changeAmount: 50,
-      changePercentage: 0.6,
-      isUp: true,
-      unitUrdu: "۴۰ کلو",
-      unitEnglish: "40 kg",
-      icon: Icons.cloud_rounded,
-    );
-
-    final defaultRice = MandiRateItem(
-      id: "rice_def",
-      cropEnglish: "Rice",
-      cropUrdu: "چاول",
-      categoryEnglish: "Grains",
-      categoryUrdu: "غلہ",
-      category: CropCategory.grains,
-      mandiCityEnglish: defaultCityEnglish,
-      mandiCityUrdu: defaultCityUrdu,
-      minRate: 9500,
-      maxRate: 10200,
-      avgRate: 9850,
-      changeAmount: 150,
-      changePercentage: 1.5,
-      isUp: true,
-      unitUrdu: "۴۰ کلو",
-      unitEnglish: "40 kg",
-      icon: Icons.rice_bowl_rounded,
-    );
-
-    final defaultUrea = MandiRateItem(
-      id: "urea_def",
-      cropEnglish: "Urea",
-      cropUrdu: "یوریا",
-      categoryEnglish: "Fertilizers",
-      categoryUrdu: "کھادیں",
-      category: CropCategory.fertilizers,
-      mandiCityEnglish: defaultCityEnglish,
-      mandiCityUrdu: defaultCityUrdu,
-      minRate: 4400,
-      maxRate: 4400,
-      avgRate: 4400,
-      changeAmount: 0,
-      changePercentage: 0,
-      isUp: true,
-      unitUrdu: "بوری",
-      unitEnglish: "Bag",
-      icon: Icons.science_rounded,
-    );
-
-    final items = _topMandiRates.isNotEmpty
-        ? _topMandiRates
-        : [defaultGandum, defaultCotton, defaultRice, defaultUrea];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2E7D32),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  _isUrdu
-                      ? "قریبی منڈی ریٹس ($defaultCityUrdu)"
-                      : "Nearby Mandi ($defaultCityEnglish)",
-                  style: _isUrdu
-                      ? AppTheme.urdu(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        )
-                      : AppTheme.english(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.near_me_rounded,
-                  size: 13,
-                  color: Color(0xFF2E7D32),
-                ),
-              ],
-            ),
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedBottomNav = 3; // Go to Mandi tab
-                });
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  children: [
-                    Text(
-                      _isUrdu ? "تمام" : "View All",
-                      style: _isUrdu
-                          ? AppTheme.urdu(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryMedium,
-                            )
-                          : AppTheme.english(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryMedium,
-                            ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      _isUrdu ? Icons.arrow_back_ios_rounded : Icons.arrow_forward_ios_rounded,
-                      size: 10,
-                      color: AppColors.primaryMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // 1 Row in Landscape, 2x2 Grid in Portrait
-        if (MediaQuery.of(context).orientation == Orientation.landscape)
-          Row(
-            children: [
-              Expanded(child: _buildMandiMiniCard(items[0])),
-              const SizedBox(width: 8),
-              Expanded(child: _buildMandiMiniCard(items[1])),
-              const SizedBox(width: 8),
-              Expanded(child: _buildMandiMiniCard(items[2])),
-              const SizedBox(width: 8),
-              Expanded(child: _buildMandiMiniCard(items[3])),
-            ],
-          )
-        else ...[
-          Row(
-            children: [
-              Expanded(child: _buildMandiMiniCard(items[0])),
-              const SizedBox(width: 8),
-              Expanded(child: _buildMandiMiniCard(items[1])),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: _buildMandiMiniCard(items[2])),
-              const SizedBox(width: 8),
-              Expanded(child: _buildMandiMiniCard(items[3])),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  String _getCleanCropName(MandiRateItem item) {
-    if (_isUrdu) {
-      if (item.cropUrdu.contains("گندم")) return "گندم";
-      if (item.cropUrdu.contains("کپاس") || item.cropUrdu.contains("پھٹی")) return "کپاس";
-      if (item.cropUrdu.contains("چاول") || item.cropUrdu.contains("باسمتی")) return "چاول";
-      if (item.cropUrdu.contains("یوریا")) return "یوریا";
-      if (item.cropUrdu.contains("مکئی")) return "مکئی";
-      if (item.cropUrdu.contains("کماد") || item.cropUrdu.contains("گنا")) return "کماد";
-      if (item.cropUrdu.contains("آلو")) return "آلو";
-      if (item.cropUrdu.contains("پیاز")) return "پیاز";
-      if (item.cropUrdu.contains("ٹماٹر")) return "ٹماٹر";
-      return item.cropUrdu.split('(')[0].trim();
-    } else {
-      if (item.cropEnglish.toLowerCase().contains("wheat")) return "Wheat";
-      if (item.cropEnglish.toLowerCase().contains("cotton")) return "Cotton";
-      if (item.cropEnglish.toLowerCase().contains("rice")) return "Rice";
-      if (item.cropEnglish.toLowerCase().contains("urea")) return "Urea";
-      if (item.cropEnglish.toLowerCase().contains("maize") || item.cropEnglish.toLowerCase().contains("corn")) return "Maize";
-      if (item.cropEnglish.toLowerCase().contains("sugarcane")) return "Sugarcane";
-      if (item.cropEnglish.toLowerCase().contains("potato")) return "Potato";
-      if (item.cropEnglish.toLowerCase().contains("onion")) return "Onion";
-      if (item.cropEnglish.toLowerCase().contains("tomato")) return "Tomato";
-      return item.cropEnglish.split('(')[0].trim();
-    }
-  }
-
-  Widget _buildMandiMiniCard(MandiRateItem item) {
-    final cleanCrop = _getCleanCropName(item);
-    final cityName = _isUrdu
-        ? (_nearbyMandiCityUrdu ?? item.mandiCityUrdu)
-        : (_nearbyMandiCity ?? item.mandiCityEnglish);
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedBottomNav = 3; // Go to Mandi tab
-        });
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.7)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    cleanCrop,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _isUrdu
-                        ? AppTheme.urdu(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                          )
-                        : AppTheme.english(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: item.changePercentage > 0
-                        ? const Color(0xFFE8F5E9)
-                        : const Color(0xFFFFF3E0),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    item.changePercentage > 0
-                        ? "+${item.changePercentage.toStringAsFixed(1)}%"
-                        : (_isUrdu ? "مستحکم" : "Stable"),
-                    style: TextStyle(
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.w700,
-                      color: item.changePercentage > 0
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFFE65100),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Rs. ${item.avgRate.round()}",
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primaryDark,
-                letterSpacing: -0.2,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _isUrdu ? (item.unitUrdu.contains("بوری") ? "بوری" : "۴۰ کلو") : (item.unitEnglish.contains("Bag") ? "Bag" : "40 kg"),
-                  style: const TextStyle(
-                    fontSize: 8.5,
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    cityName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 8.5,
-                      color: AppColors.primaryMedium,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- FARM LEDGER & AGRI ADVISORY SPOTLIGHT ---
-  Widget _buildAgriAdvisoryAndKhataSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 1. Farm Ledger Offline Snapshot Card
-        InkWell(
-          onTap: () {
-            setState(() {
-              _selectedBottomNav = 2; // Khata Tab
-            });
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.7)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDark.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: AppColors.primaryDark,
-                      size: 22,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _isUrdu ? "کسان کھیت کھاتہ" : "Smart Farm Ledger",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _isUrdu
-                                  ? AppTheme.urdu(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textDark,
-                                    )
-                                  : AppTheme.english(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textDark,
-                                    ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceAlt,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.borderLight),
-                            ),
-                            child: Text(
-                              _isUrdu ? "آف لائن" : "Offline",
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primaryMedium,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _isUrdu
-                            ? "کھاد، بیج، اسپرے اور ڈیزل کے اخراجات بغیر انٹرنیٹ درج کریں"
-                            : "Record fertilizers, seeds & diesel expenses offline",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _isUrdu
-                            ? AppTheme.urdu(
-                                fontSize: 10,
-                                color: AppColors.textMuted,
-                              )
-                            : AppTheme.english(
-                                fontSize: 10.5,
-                                color: AppColors.textMuted,
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  _isUrdu ? Icons.arrow_back_ios_rounded : Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: AppColors.textLight,
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // 2. Seasonal Agri Advisory Card
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F8F3),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFD4E7DA)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMedium.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lightbulb_rounded,
-                  color: Color(0xFF257538),
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _isUrdu ? "موسمی زرعی رہنمائی" : "Seasonal Crop Advisory",
-                      style: _isUrdu
-                          ? AppTheme.urdu(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF1B4332),
-                            )
-                          : AppTheme.english(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF1B4332),
-                            ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isUrdu
-                          ? "گندم و ربیع سیزن میں نائٹروجنی کھاد کا متوازن استعمال اور دیمک سے بچاؤ کے لیے سفارش کردہ وقت پر اسپرے کریں۔"
-                          : "Balanced nitrogen application and timely protective spray against termites ensures optimum yield this season.",
-                      style: _isUrdu
-                          ? AppTheme.urdu(
-                              fontSize: 10.5,
-                              color: const Color(0xFF2D6A4F),
-                              height: 1.5,
-                            )
-                          : AppTheme.english(
-                              fontSize: 11,
-                              color: const Color(0xFF2D6A4F),
-                              height: 1.3,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

@@ -20,8 +20,21 @@ class UserSessionController extends ChangeNotifier {
   String get email => _email ?? '';
   AppRole get activeRole => _activeRole;
   String get userName => _userName ?? 'کسان بھائی';
+  String displayName(bool isUrdu) {
+    if (_userName != null && _userName!.trim().isNotEmpty && _userName != 'کسان بھائی') {
+      return _userName!;
+    }
+    return isUrdu ? 'کسان بھائی' : 'Farmer';
+  }
+
   String get userPhone => _userPhone ?? '';
   String get district => _district ?? 'ملتان';
+  String displayDistrict(bool isUrdu) {
+    if (_district != null && _district!.trim().isNotEmpty && _district != 'ملتان' && _district != 'Multan') {
+      return _district!;
+    }
+    return isUrdu ? 'ملتان' : 'Multan';
+  }
   String get businessOrFarmName => _businessOrFarmName ?? '';
   String get licenseNo => _licenseNo ?? '';
   bool get isVerified => _isVerified;

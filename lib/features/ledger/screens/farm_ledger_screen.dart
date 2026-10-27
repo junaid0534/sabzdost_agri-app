@@ -29,6 +29,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Wheat",
       "urduName": "گندم",
       "tag": "ربیع فصل",
+      "tagEnglish": "Rabi Season",
       "icon": Icons.grass_rounded,
       "color": Color(0xFFE5A93C),
       "filterKey": "گندم",
@@ -37,6 +38,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Cotton",
       "urduName": "کپاس",
       "tag": "خریف فصل (سلور)",
+      "tagEnglish": "Kharif Season",
       "icon": Icons.cloud_rounded,
       "color": Color(0xFF00897B),
       "filterKey": "کپاس",
@@ -45,6 +47,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Rice",
       "urduName": "دھان / چاول",
       "tag": "خریف فصل (مونجی)",
+      "tagEnglish": "Paddy Season",
       "icon": Icons.water_drop_rounded,
       "color": Color(0xFF2E7D32),
       "filterKey": "دھان",
@@ -53,6 +56,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Maize",
       "urduName": "مکئی",
       "tag": "بہاریہ و خریف",
+      "tagEnglish": "Spring & Autumn",
       "icon": Icons.eco_rounded,
       "color": Color(0xFFEF6C00),
       "filterKey": "مکئی",
@@ -61,6 +65,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Sugarcane",
       "urduName": "کماد / گنا",
       "tag": "سالانہ نقد آور",
+      "tagEnglish": "Cash Crop",
       "icon": Icons.forest_rounded,
       "color": Color(0xFF388E3C),
       "filterKey": "گنا",
@@ -69,6 +74,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
       "name": "Vegetables",
       "urduName": "باغ و سبزیاں",
       "tag": "موسمی پیداوار",
+      "tagEnglish": "Orchard & Veg",
       "icon": Icons.local_florist_rounded,
       "color": Color(0xFF0288D1),
       "filterKey": "سبزیاں",
@@ -78,73 +84,73 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
   final List<LedgerEntry> _entries = [
     LedgerEntry(
       id: "1",
-      title: "گندم فصل فروخت (غلہ منڈی)",
-      titleUrdu: "گندم فصل فروخت",
+      title: "Wheat Grain Harvest Sale",
+      titleUrdu: "گندم فصل فروخت (غلہ منڈی)",
       totalAmount: 60000,
       paidAmount: 30000,
       type: LedgerEntryType.income,
       category: LedgerCategory.cropSale,
-      cropName: "گندم (Wheat)",
+      cropName: "Wheat",
       date: DateTime.now().subtract(const Duration(hours: 3)),
       note: "نصف رقم وصول ہوئی، 30 ہزار باقی",
     ),
     LedgerEntry(
       id: "2",
-      title: "یوریا سونا کھاد 3 بوری",
-      titleUrdu: "یوریا سونا کھاد 3 بوری",
+      title: "Sona Urea Fertilizer (3 Bags)",
+      titleUrdu: "یوریا سونا کھاد ۳ بوری",
       totalAmount: 14400,
       paidAmount: 14400,
       type: LedgerEntryType.expense,
       category: LedgerCategory.fertilizer,
-      cropName: "گندم (Wheat)",
+      cropName: "Wheat",
       date: DateTime.now().subtract(const Duration(days: 1)),
       note: "مکمل نقد ادا",
     ),
     LedgerEntry(
       id: "3",
-      title: "کپاس پھٹی فروخت (15 من)",
-      titleUrdu: "کپاس پھٹی فروخت",
+      title: "Raw Cotton Phutti Sale (15 Maund)",
+      titleUrdu: "کپاس پھٹی فروخت (۱۵ من)",
       totalAmount: 127500,
       paidAmount: 100000,
       type: LedgerEntryType.income,
       category: LedgerCategory.cropSale,
-      cropName: "کپاس (Cotton)",
+      cropName: "Cotton",
       date: DateTime.now().subtract(const Duration(days: 3)),
       note: "27,500 بقایا بیلنس",
     ),
     LedgerEntry(
       id: "4",
-      title: "ٹیوب ویل ڈیزل 50 لیٹر",
-      titleUrdu: "ٹیوب ویل ڈیزل 50L",
+      title: "Tubewell Diesel Fuel (50L)",
+      titleUrdu: "ٹیوب ویل ڈیزل ۵۰ لیٹر",
       totalAmount: 13750,
       paidAmount: 13750,
       type: LedgerEntryType.expense,
       category: LedgerCategory.diesel,
-      cropName: "کپاس (Cotton)",
+      cropName: "Cotton",
       date: DateTime.now().subtract(const Duration(days: 4)),
       note: "پہلا پانی لگایا",
     ),
     LedgerEntry(
       id: "5",
-      title: "کیڑے مار اسپرے",
+      title: "Pesticide Insect Spray",
       titleUrdu: "کیڑے مار اسپرے",
       totalAmount: 7800,
       paidAmount: 4000,
       type: LedgerEntryType.expense,
       category: LedgerCategory.spray,
-      cropName: "کپاس (Cotton)",
+      cropName: "Cotton",
       date: DateTime.now().subtract(const Duration(days: 5)),
       note: "3800 روپے ادھار بقایا",
     ),
     LedgerEntry(
       id: "6",
-      title: "دھان / چاول بیج",
+      title: "Rice / Paddy Certified Seeds",
       titleUrdu: "دھان / چاول بیج",
       totalAmount: 9500,
       paidAmount: 9500,
       type: LedgerEntryType.expense,
       category: LedgerCategory.seed,
-      cropName: "دھان / چاول (Rice)",
+      cropName: "Rice",
       date: DateTime.now().subtract(const Duration(days: 8)),
       note: "2 تھیلے بیج",
     ),
@@ -168,7 +174,13 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
 
   void _openCropDetail(Map<String, dynamic> crop) {
     final filterKey = crop["filterKey"] as String;
-    final cropEntries = _entries.where((e) => e.cropName.contains(filterKey)).toList();
+    final englishName = crop["name"] as String;
+    final cropEntries = _entries.where((e) =>
+      e.cropName.contains(filterKey) ||
+      e.cropName.toLowerCase().contains(englishName.toLowerCase()) ||
+      e.title.toLowerCase().contains(englishName.toLowerCase()) ||
+      e.titleUrdu.contains(filterKey)
+    ).toList();
 
     Navigator.push(
       context,
@@ -267,7 +279,7 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
                 ),
               ),
               title: Text(
-                isUrdu ? "فصل وار کھاتہ" : "Crop-wise Khata",
+                isUrdu ? "فصل وار کھاتہ" : "Crop-wise Ledger",
                 style: isUrdu
                     ? AppTheme.urdu(
                         fontSize: isLandscape ? 14 : 15,
@@ -283,14 +295,15 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.download_rounded, size: 18, color: AppColors.primaryDark),
-                  tooltip: isUrdu ? "رپورٹ" : "Report",
+                  tooltip: isUrdu ? "رپورٹ محفوظ کریں" : "Export Report",
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          isUrdu ? "کھاتہ رپورٹ محفوظ کر لی گئی ہے" : "Ledger report export ready",
-                          style: const TextStyle(fontSize: 11),
+                          isUrdu ? "کھاتہ رپورٹ محفوظ کر لی گئی ہے" : "Ledger report exported successfully",
+                          style: isUrdu ? AppTheme.urdu(fontSize: 11, color: Colors.white) : null,
                         ),
+                        backgroundColor: AppColors.primaryDark,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -311,10 +324,10 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 80),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.15, // Compact square-ish ratio
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.86,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -339,44 +352,38 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
         Text(
           isUrdu ? "فصل منتخب کریں" : "Select Crop",
           style: isUrdu
-              ? AppTheme.urdu(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark)
-              : AppTheme.english(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark),
+              ? AppTheme.urdu(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark)
+              : AppTheme.english(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
         ),
         Text(
-          "${_cropTypes.length} فصلیں",
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+          isUrdu ? "${_cropTypes.length} فصلیں" : "${_cropTypes.length} Crops",
+          style: AppTheme.english(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
         ),
       ],
     );
   }
 
-  // --- CROP GRID CARD (COMPACT) ---
+  // --- CROP GRID CARD (3 IN 1 ROW - CLEAN, PROPER ICON & ADAPTIVE LANGUAGE) ---
   Widget _buildCropGridCard(Map<String, dynamic> crop, bool isUrdu) {
-    final String filterKey = crop["filterKey"];
-    final Color color = crop["color"];
-    final IconData icon = crop["icon"];
-    final String urduName = crop["urduName"];
-    final String tag = crop["tag"];
-
-    final cropEntries = _entries.where((e) => e.cropName.contains(filterKey)).toList();
-    final double income = cropEntries
-        .where((e) => e.type == LedgerEntryType.income)
-        .fold(0.0, (sum, e) => sum + e.paidAmount);
-    final double expense = cropEntries
-        .where((e) => e.type == LedgerEntryType.expense)
-        .fold(0.0, (sum, e) => sum + e.paidAmount);
-    final double net = income - expense;
+    final Color color = crop["color"] as Color;
+    final IconData icon = crop["icon"] as IconData;
+    final String urduName = crop["urduName"] as String;
+    final String englishName = crop["name"] as String;
+    final String tag = isUrdu ? (crop["tag"] as String) : (crop["tagEnglish"] as String);
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderLight),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderLight.withValues(alpha: 0.85),
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
-            blurRadius: 4,
-            offset: const Offset(0, 1.5),
+            color: AppColors.primaryDark.withValues(alpha: 0.035),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -384,81 +391,61 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _openCropDetail(crop),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(9.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(icon, color: color, size: 16),
-                    ),
-                    Text(
-                      tag,
-                      style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      urduName,
-                      style: isUrdu
-                          ? AppTheme.urdu(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark)
-                          : const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
-                    ),
-                    Text(
-                      crop["name"],
-                      style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+                // 1. Proper Crop Icon Container
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: cropEntries.isEmpty
-                        ? AppColors.surfaceVariant
-                        : (net >= 0
-                            ? AppColors.successGreen.withValues(alpha: 0.08)
-                            : AppColors.alertSoftRed.withValues(alpha: 0.08)),
-                    borderRadius: BorderRadius.circular(6),
+                    color: color.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.28),
+                      width: 1.2,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        cropEntries.isEmpty
-                            ? (isUrdu ? "کوئی ریکارڈ نہیں" : "No entries")
-                            : (net >= 0 ? (isUrdu ? "+منافع" : "+Profit") : (isUrdu ? "-خرچہ" : "-Expense")),
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w700,
-                          color: cropEntries.isEmpty
-                              ? AppColors.textMuted
-                              : (net >= 0 ? AppColors.successGreen : AppColors.alertSoftRed),
+                  child: Center(
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                ),
+                SizedBox(height: isUrdu ? 6 : 7),
+
+                // 2. Primary Crop Name (Pure Urdu in Urdu mode, Pure English in English mode)
+                Text(
+                  isUrdu ? urduName : englishName,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: isUrdu
+                      ? AppTheme.urdu(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                          height: 1.85,
+                        )
+                      : AppTheme.english(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
                         ),
-                      ),
-                      if (cropEntries.isNotEmpty)
-                        Text(
-                          "Rs. ${_formatAmount(net.abs())}",
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                            color: net >= 0 ? AppColors.successGreen : AppColors.alertSoftRed,
-                          ),
-                        ),
-                    ],
+                ),
+                SizedBox(height: isUrdu ? 4 : 2),
+
+                // 3. Subtitle (English crop name in Urdu mode; Category/Season in English mode)
+                Text(
+                  isUrdu ? englishName : tag,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.english(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
@@ -467,15 +454,5 @@ class _FarmLedgerScreenState extends State<FarmLedgerScreen> {
         ),
       ),
     );
-  }
-
-  String _formatAmount(double amount) {
-    if (amount >= 100000) {
-      return "${(amount / 100000).toStringAsFixed(1)}L";
-    }
-    return amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
   }
 }

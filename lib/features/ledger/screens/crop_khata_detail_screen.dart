@@ -33,7 +33,7 @@ class CropKhataDetailScreen extends StatefulWidget {
 }
 
 class _CropKhataDetailScreenState extends State<CropKhataDetailScreen> {
-  int _filterTab = 0; // 0: تمام, 1: اخراجات, 2: آمدن
+  int _filterTab = 0; // 0: All, 1: Expenses, 2: Income
 
   double get _totalIncome => widget.entries
       .where((e) => e.type == LedgerEntryType.income)
@@ -65,6 +65,7 @@ class _CropKhataDetailScreenState extends State<CropKhataDetailScreen> {
       builder: (ctx) => AddLedgerEntrySheet(
         isUrdu: widget.isUrdu,
         onAddEntry: widget.onAddEntry,
+        initialCrop: widget.cropName,
       ),
     );
   }
@@ -89,365 +90,546 @@ class _CropKhataDetailScreenState extends State<CropKhataDetailScreen> {
     return ResponsiveLayout(
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, size: 20, color: AppColors.textDark),
-            onPressed: () => Navigator.pop(context),
-          ),
-          titleSpacing: 0,
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: widget.themeColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(widget.icon, color: widget.themeColor, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isUrdu ? "${widget.cropUrduName} کھاتہ" : "${widget.cropName} Ledger",
-                    style: isUrdu
-                        ? AppTheme.urdu(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark)
-                        : AppTheme.english(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
-                  ),
-                  Text(
-                    isUrdu ? "نفع و لاگت رپورٹ" : "Profit & Analytics",
-                    style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        appBar: _buildAppBar(isUrdu),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 74.0),
-          child: SizedBox(
-            height: 40,
-            child: FloatingActionButton.extended(
-              onPressed: _openAddEntry,
-              backgroundColor: widget.themeColor,
-              elevation: 2,
-              icon: const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-              label: Text(
-                isUrdu ? "فصل اندراج (+)" : "Add Crop Entry (+)",
-                style: isUrdu
-                    ? AppTheme.urdu(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white)
-                    : AppTheme.english(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.white),
-              ),
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: FloatingActionButton.extended(
+            onPressed: _openAddEntry,
+            backgroundColor: widget.themeColor,
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+            label: Text(
+              isUrdu ? "اندراج (+)" : "Add (+)",
+              style: isUrdu
+                  ? AppTheme.urdu(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    )
+                  : AppTheme.english(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
             ),
           ),
         ),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 85),
           physics: const BouncingScrollPhysics(),
           children: [
-            // Crop Financial Compact Banner
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    widget.themeColor,
-                    widget.themeColor.withValues(alpha: 0.88),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.themeColor.withValues(alpha: 0.22),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isUrdu ? "خالص منافع / بچت" : "Net Profit",
-                        style: isUrdu
-                            ? AppTheme.urdu(fontSize: 10, color: Colors.white70, fontWeight: FontWeight.w600)
-                            : const TextStyle(fontSize: 10, color: Colors.white70),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          _netProfit >= 0
-                              ? (isUrdu ? "منافع میں" : "Profitable")
-                              : (isUrdu ? "زیرِ لاگت" : "Deficit"),
-                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${_netProfit >= 0 ? '+' : '-'} Rs. ${_formatAmount(_netProfit.abs())}",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Divider(color: Colors.white24, height: 1),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isUrdu ? "کل فروخت (آمدن)" : "Total Income",
-                              style: const TextStyle(fontSize: 9.5, color: Colors.white70),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              "Rs. ${_formatAmount(_totalIncome)}",
-                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(width: 1, height: 22, color: Colors.white24),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isUrdu ? "کل خرچہ (لاگت)" : "Total Expense",
-                              style: const TextStyle(fontSize: 9.5, color: Colors.white70),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              "Rs. ${_formatAmount(_totalExpense)}",
-                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // 1. Sleek Financial Overview Card
+            _buildFinancialOverviewCard(isUrdu),
+            const SizedBox(height: 12),
 
+            // 2. Pending dues (if any)
             if (_pendingReceivable > 0) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF8E1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFFE082)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFFE65100), size: 14),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        isUrdu
-                            ? "منڈی سے بقایا لینا ہے: Rs. ${_formatAmount(_pendingReceivable)}"
-                            : "Pending dues to receive: Rs. ${_formatAmount(_pendingReceivable)}",
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFE65100)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildPendingNotice(isUrdu),
+              const SizedBox(height: 12),
             ],
 
-            const SizedBox(height: 10),
+            // 3. Compact Segmented Filter Tabs (تمام، خرچہ، آمدن)
+            _buildSegmentedFilterTabs(isUrdu),
+            const SizedBox(height: 12),
 
-            // Sub tabs
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.all(2.5),
-              child: Row(
-                children: [
-                  _buildSubTab(0, isUrdu ? "تمام اندراج" : "All"),
-                  _buildSubTab(1, isUrdu ? "اخراجات" : "Expenses"),
-                  _buildSubTab(2, isUrdu ? "آمدن" : "Income"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Entries List
+            // 4. Entries List or Clean Empty State
             if (_filteredList.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                alignment: Alignment.center,
-                child: Column(
-                  children: [
-                    Icon(Icons.notes_rounded, size: 28, color: AppColors.textLight),
-                    const SizedBox(height: 6),
-                    Text(
-                      isUrdu ? "کوئی اندراج موجود نہیں ہے" : "No entries",
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              )
+              _buildEmptyState(isUrdu)
             else
-              ..._filteredList.map((item) => _buildItemTile(item, isUrdu)),
+              ..._filteredList.map((item) => _buildEntryTile(item, isUrdu)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSubTab(int index, String label) {
-    final isSelected = _filterTab == index;
+  // --- APP BAR ---
+  PreferredSizeWidget _buildAppBar(bool isUrdu) {
+    return AppBar(
+      backgroundColor: AppColors.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded, size: 22, color: AppColors.textDark),
+        onPressed: () => Navigator.pop(context),
+      ),
+      titleSpacing: 0,
+      title: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: widget.themeColor.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Icon(widget.icon, color: widget.themeColor, size: 17),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isUrdu ? "${widget.cropUrduName} کھاتہ" : "${widget.cropName} Ledger",
+            style: isUrdu
+                ? AppTheme.urdu(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                    height: 1.8,
+                  )
+                : AppTheme.english(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                  ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.file_download_outlined, size: 20, color: AppColors.primaryDark),
+          tooltip: isUrdu ? "محفوظ کریں" : "Export",
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isUrdu ? "کھاتہ محفوظ کر لیا گیا" : "Ledger exported",
+                  style: isUrdu ? AppTheme.urdu(fontSize: 11, color: Colors.white) : null,
+                ),
+                backgroundColor: AppColors.primaryDark,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 4),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          color: AppColors.borderLight.withValues(alpha: 0.7),
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  // --- FINANCIAL OVERVIEW CARD ---
+  Widget _buildFinancialOverviewCard(bool isUrdu) {
+    final bool isProfitable = _netProfit >= 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Net Profit Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isUrdu ? "خالص منافع / بچت" : "Net Balance / Profit",
+                    style: isUrdu
+                        ? AppTheme.urdu(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textMuted,
+                            height: 1.7,
+                          )
+                        : AppTheme.english(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textMuted,
+                          ),
+                  ),
+                  SizedBox(height: isUrdu ? 4 : 2),
+                  Text(
+                    "${isProfitable ? '+' : '-'} Rs. ${_formatAmount(_netProfit.abs())}",
+                    style: AppTheme.english(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: isProfitable ? AppColors.successGreen : AppColors.alertSoftRed,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              // Compact Status Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isProfitable
+                      ? AppColors.successGreen.withValues(alpha: 0.1)
+                      : AppColors.alertSoftRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isProfitable
+                      ? (isUrdu ? "+منافع" : "+Profit")
+                      : (isUrdu ? "-خرچہ" : "-Deficit"),
+                  style: isUrdu
+                      ? AppTheme.urdu(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: isProfitable ? AppColors.successGreen : AppColors.alertSoftRed,
+                        )
+                      : AppTheme.english(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isProfitable ? AppColors.successGreen : AppColors.alertSoftRed,
+                        ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: AppColors.borderLight),
+          const SizedBox(height: 12),
+
+          // Two Simple Stats: Income & Expense
+          Row(
+            children: [
+              // Income
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.successGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_downward_rounded,
+                        color: AppColors.successGreen,
+                        size: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isUrdu ? "آمدن" : "Income",
+                            style: isUrdu
+                                ? AppTheme.urdu(fontSize: 10, color: AppColors.textMuted, height: 1.6)
+                                : AppTheme.english(fontSize: 10.5, color: AppColors.textMuted),
+                          ),
+                          Text(
+                            "Rs. ${_formatAmount(_totalIncome)}",
+                            style: AppTheme.english(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 26, color: AppColors.borderLight),
+              const SizedBox(width: 12),
+              // Expense
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.alertSoftRed.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: AppColors.alertSoftRed,
+                        size: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isUrdu ? "خرچ" : "Expense",
+                            style: isUrdu
+                                ? AppTheme.urdu(fontSize: 10, color: AppColors.textMuted, height: 1.6)
+                                : AppTheme.english(fontSize: 10.5, color: AppColors.textMuted),
+                          ),
+                          Text(
+                            "Rs. ${_formatAmount(_totalExpense)}",
+                            style: AppTheme.english(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- PENDING RECEIVABLE NOTICE ---
+  Widget _buildPendingNotice(bool isUrdu) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF9E6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFFD54F)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.access_time_rounded, color: Color(0xFFD97706), size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isUrdu
+                  ? "بقایا رقم: Rs. ${_formatAmount(_pendingReceivable)}"
+                  : "Pending dues: Rs. ${_formatAmount(_pendingReceivable)}",
+              style: isUrdu
+                  ? AppTheme.urdu(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFB45309),
+                      height: 1.7,
+                    )
+                  : AppTheme.english(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFB45309),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- SEGMENTED FILTER TABS ---
+  Widget _buildSegmentedFilterTabs(bool isUrdu) {
+    return Container(
+      height: 38,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.all(2.5),
+      child: Row(
+        children: [
+          _buildFilterTabItem(0, isUrdu ? "تمام اندراج" : "All Entries"),
+          _buildFilterTabItem(1, isUrdu ? "اخراجات (خرچہ)" : "Expenses"),
+          _buildFilterTabItem(2, isUrdu ? "آمدن (فروخت)" : "Income"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterTabItem(int index, String title) {
+    final bool isSelected = _filterTab == index;
+
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _filterTab = index),
         borderRadius: BorderRadius.circular(8),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 3,
                       offset: const Offset(0, 1),
                     ),
                   ]
-                : [],
+                : null,
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? widget.themeColor : AppColors.textMuted,
-              ),
-            ),
+          child: Text(
+            title,
+            style: widget.isUrdu
+                ? AppTheme.urdu(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? widget.themeColor : AppColors.textMuted,
+                    height: 1.6,
+                  )
+                : AppTheme.english(
+                    fontSize: 11.5,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? widget.themeColor : AppColors.textMuted,
+                  ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildItemTile(LedgerEntry item, bool isUrdu) {
+  // --- CLEAN ENTRY TILE ---
+  Widget _buildEntryTile(LedgerEntry item, bool isUrdu) {
     final isExpense = item.type == LedgerEntryType.expense;
     final hasPending = item.hasRemainingBalance;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 7),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasPending ? const Color(0xFFFFCC80) : AppColors.borderLight,
+          color: hasPending
+              ? const Color(0xFFFFCC80)
+              : AppColors.borderLight.withValues(alpha: 0.75),
+          width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: item.category.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(item.category.icon, size: 15, color: item.category.color),
+      child: InkWell(
+        onTap: hasPending ? () => _openSettle(item) : null,
+        child: Row(
+          children: [
+            // Category Icon
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: item.category.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(9),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isUrdu ? item.titleUrdu : (item.title.isNotEmpty ? item.title : item.titleUrdu),
-                      style: isUrdu
-                          ? AppTheme.urdu(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textDark)
-                          : const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textDark),
-                    ),
-                    Text(
-                      "${item.partyName.isNotEmpty ? item.partyName : (isUrdu ? item.category.urduTitle : item.category.englishTitle)} • ${_formatDate(item.date, isUrdu)}",
-                      style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "${isExpense ? '-' : '+'} Rs. ${_formatAmount(item.paidAmount)}",
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
-                      color: isExpense ? AppColors.alertSoftRed : AppColors.successGreen,
-                    ),
-                  ),
-                  if (hasPending)
-                    Text(
-                      isUrdu ? "بقایا: ${_formatAmount(item.remainingBalance)}" : "Due: ${_formatAmount(item.remainingBalance)}",
-                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFFE65100)),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          if (hasPending) ...[
-            const SizedBox(height: 6),
-            InkWell(
-              onTap: () => _openSettle(item),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.successGreen.withValues(alpha: 0.4)),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  isUrdu ? "بقایا رقم وصول کریں" : "Collect Remaining",
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.successGreen),
-                ),
+              child: Center(
+                child: Icon(item.category.icon, size: 17, color: item.category.color),
               ),
             ),
+            const SizedBox(width: 10),
+            // Title & Date
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isUrdu ? item.titleUrdu : (item.title.isNotEmpty ? item.title : item.titleUrdu),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: isUrdu
+                        ? AppTheme.urdu(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                            height: 1.8,
+                          )
+                        : AppTheme.english(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                  ),
+                  SizedBox(height: isUrdu ? 3 : 2),
+                  Text(
+                    "${isUrdu ? item.category.urduTitle : item.category.englishTitle} • ${_formatDate(item.date, isUrdu)}",
+                    style: AppTheme.english(
+                      fontSize: 10.5,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Amount & Due tag
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "${isExpense ? '-' : '+'} Rs. ${_formatAmount(item.paidAmount)}",
+                  style: AppTheme.english(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w900,
+                    color: isExpense ? AppColors.alertSoftRed : AppColors.successGreen,
+                  ),
+                ),
+                if (hasPending)
+                  Text(
+                    isUrdu
+                        ? "بقایا: ${_formatAmount(item.remainingBalance)}"
+                        : "Due: ${_formatAmount(item.remainingBalance)}",
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFFE65100),
+                    ),
+                  ),
+              ],
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // --- CLEAN EMPTY STATE ---
+  Widget _buildEmptyState(bool isUrdu) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.receipt_long_rounded,
+            size: 26,
+            color: AppColors.textLight,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isUrdu ? "کوئی اندراج موجود نہیں" : "No entries found",
+            style: isUrdu
+                ? AppTheme.urdu(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  )
+                : AppTheme.english(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMuted,
+                  ),
+          ),
         ],
       ),
     );

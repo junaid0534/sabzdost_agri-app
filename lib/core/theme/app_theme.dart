@@ -8,7 +8,7 @@ class AppTheme {
     double fontSize = 12,
     FontWeight fontWeight = FontWeight.w600,
     Color color = AppColors.textDark,
-    double height = 1.6,
+    double height = 1.85,
     double letterSpacing = 0,
   }) {
     return GoogleFonts.notoNastaliqUrdu(
