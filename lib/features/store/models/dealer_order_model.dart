@@ -2,19 +2,22 @@ import 'package:flutter/material.dart';
 import 'agri_product_model.dart';
 
 enum DealerOrderStatus {
-  pending,    // نیا آرڈر (New order from farmer)
-  confirmed,  // تصدیق شدہ (Confirmed / Being prepared)
-  dispatched, // روانہ کردہ (On the way to farm)
-  completed,  // مکمل شدہ (Delivered & Payment settled)
-  cancelled,  // منسوخ (Cancelled)
+  pending,    // New order from farmer
+  confirmed,  // Confirmed / Being prepared
+  dispatched, // On the way to farm
+  completed,  // Delivered & Payment settled
+  cancelled,  // Cancelled
 }
 
 class DealerOrderModel {
   final String id;
   final String farmerName;
+  final String? farmerNameEnglish;
   final String farmerPhone;
   final String farmerVillage;
+  final String? farmerVillageEnglish;
   final String farmerCity;
+  final String? farmerCityEnglish;
   final String productNameEnglish;
   final String productNameUrdu;
   final AgriProductCategory category;
@@ -26,14 +29,19 @@ class DealerOrderModel {
   final DateTime orderDate;
   DealerOrderStatus status;
   final String paymentMethod;
+  final String? paymentMethodEnglish;
   final String? deliveryNotes;
+  final String? deliveryNotesEnglish;
 
   DealerOrderModel({
     required this.id,
     required this.farmerName,
+    this.farmerNameEnglish,
     required this.farmerPhone,
     required this.farmerVillage,
+    this.farmerVillageEnglish,
     required this.farmerCity,
+    this.farmerCityEnglish,
     required this.productNameEnglish,
     required this.productNameUrdu,
     required this.category,
@@ -45,23 +53,66 @@ class DealerOrderModel {
     required this.orderDate,
     required this.status,
     required this.paymentMethod,
+    this.paymentMethodEnglish,
     this.deliveryNotes,
+    this.deliveryNotesEnglish,
   });
+
+  String getFarmerName(bool isUrdu) {
+    if (isUrdu) return farmerName;
+    return (farmerNameEnglish != null && farmerNameEnglish!.isNotEmpty)
+        ? farmerNameEnglish!
+        : farmerName;
+  }
+
+  String getFarmerCity(bool isUrdu) {
+    if (isUrdu) return farmerCity;
+    return (farmerCityEnglish != null && farmerCityEnglish!.isNotEmpty)
+        ? farmerCityEnglish!
+        : farmerCity;
+  }
+
+  String getFarmerVillage(bool isUrdu) {
+    if (isUrdu) return farmerVillage;
+    return (farmerVillageEnglish != null && farmerVillageEnglish!.isNotEmpty)
+        ? farmerVillageEnglish!
+        : farmerVillage;
+  }
+
+  String getFullLocation(bool isUrdu) {
+    final v = getFarmerVillage(isUrdu);
+    final c = getFarmerCity(isUrdu);
+    return isUrdu ? "$v، $c" : "$v, $c";
+  }
 
   String getProductName(bool isUrdu) => isUrdu ? productNameUrdu : productNameEnglish;
   String getPackUnit(bool isUrdu) => isUrdu ? packUnitUrdu : packUnitEnglish;
-  String getFullLocation(bool isUrdu) => isUrdu ? "$farmerVillage، $farmerCity" : "$farmerVillage, $farmerCity";
+
+  String getPaymentMethod(bool isUrdu) {
+    if (isUrdu) {
+      return paymentMethod.replaceAll(RegExp(r'\([^)]*\)'), '').trim();
+    }
+    if (paymentMethodEnglish != null && paymentMethodEnglish!.isNotEmpty) {
+      return paymentMethodEnglish!;
+    }
+    return paymentMethod.split('(').first.trim();
+  }
+
+  String? getDeliveryNotes(bool isUrdu) {
+    if (isUrdu) return deliveryNotes;
+    return deliveryNotesEnglish ?? deliveryNotes;
+  }
 
   String getStatusLabel(bool isUrdu) {
     switch (status) {
       case DealerOrderStatus.pending:
-        return isUrdu ? "نیا آرڈر (پینڈنگ)" : "Pending Review";
+        return isUrdu ? "نیا" : "Pending";
       case DealerOrderStatus.confirmed:
         return isUrdu ? "تصدیق شدہ" : "Confirmed";
       case DealerOrderStatus.dispatched:
-        return isUrdu ? "روانہ ہو چکا" : "Dispatched";
+        return isUrdu ? "روانہ" : "Dispatched";
       case DealerOrderStatus.completed:
-        return isUrdu ? "مکمل / ڈیلیورڈ" : "Completed";
+        return isUrdu ? "ڈیلیورڈ" : "Delivered";
       case DealerOrderStatus.cancelled:
         return isUrdu ? "منسوخ" : "Cancelled";
     }

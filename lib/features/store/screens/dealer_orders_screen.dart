@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/language_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/mock_dealer_orders.dart';
@@ -22,16 +23,14 @@ class DealerOrdersScreen extends StatefulWidget {
 }
 
 class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
-  late bool _isUrdu;
+  bool get _isUrdu => widget.isUrdu ?? LanguageController.instance.isUrdu;
   late List<DealerOrderModel> _orders;
-  String _selectedFilter = "all"; // all, pending, confirmed, dispatched, completed
+  String _selectedFilter = "all"; // all, pending, dispatched, completed
   String _searchQuery = "";
 
   @override
   void initState() {
     super.initState();
-    // Strictly English for Dealer Section as requested
-    _isUrdu = false;
     _orders = MockDealerOrders.getInitialOrders();
   }
 
@@ -41,10 +40,8 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
       if (_selectedFilter == "pending" && order.status != DealerOrderStatus.pending) {
         return false;
       }
-      if (_selectedFilter == "confirmed" && order.status != DealerOrderStatus.confirmed) {
-        return false;
-      }
-      if (_selectedFilter == "dispatched" && order.status != DealerOrderStatus.dispatched) {
+      if (_selectedFilter == "dispatched" &&
+          (order.status != DealerOrderStatus.dispatched && order.status != DealerOrderStatus.confirmed)) {
         return false;
       }
       if (_selectedFilter == "completed" && order.status != DealerOrderStatus.completed) {
@@ -54,22 +51,21 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
       // 2. Search Query
       if (_searchQuery.trim().isNotEmpty) {
         final q = _searchQuery.toLowerCase().trim();
-        final matchName = order.farmerName.toLowerCase().contains(q);
-        final matchCity = order.farmerCity.toLowerCase().contains(q) || order.farmerVillage.toLowerCase().contains(q);
-        final matchProduct = order.productNameEnglish.toLowerCase().contains(q) || order.productNameUrdu.contains(q);
+        final matchFarmer = order.getFarmerName(_isUrdu).toLowerCase().contains(q) ||
+            order.farmerName.toLowerCase().contains(q) ||
+            (order.farmerNameEnglish?.toLowerCase().contains(q) ?? false);
+        final matchCity = order.getFullLocation(_isUrdu).toLowerCase().contains(q) ||
+            order.farmerCity.toLowerCase().contains(q) ||
+            (order.farmerCityEnglish?.toLowerCase().contains(q) ?? false);
+        final matchProduct = order.productNameEnglish.toLowerCase().contains(q) ||
+            order.productNameUrdu.contains(q);
         final matchId = order.id.toLowerCase().contains(q);
-        return matchName || matchCity || matchProduct || matchId;
+        return matchFarmer || matchCity || matchProduct || matchId;
       }
 
       return true;
     }).toList();
   }
-
-  int get _pendingCount => _orders.where((o) => o.status == DealerOrderStatus.pending).length;
-  int get _dispatchedCount => _orders.where((o) => o.status == DealerOrderStatus.dispatched).length;
-  double get _totalRevenue => _orders
-      .where((o) => o.status == DealerOrderStatus.completed || o.status == DealerOrderStatus.dispatched)
-      .fold(0.0, (sum, o) => sum + o.totalPrice);
 
   void _updateOrderStatus(DealerOrderModel order, DealerOrderStatus newStatus, String actionMessage) {
     setState(() {
@@ -118,12 +114,17 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              order.farmerName,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+              order.getFarmerName(_isUrdu),
+              style: _isUrdu
+                  ? AppTheme.urdu(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark)
+                  : AppTheme.english(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
             ),
+            const SizedBox(height: 2),
             Text(
               order.getFullLocation(_isUrdu),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: _isUrdu
+                  ? AppTheme.urdu(fontSize: 12, color: AppColors.textMuted)
+                  : AppTheme.english(fontSize: 12, color: AppColors.textMuted),
             ),
             const SizedBox(height: 6),
             Text(
@@ -150,7 +151,9 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(_isUrdu ? "کال ملائی جا رہی ہے: ${order.farmerPhone}" : "Dialing ${order.farmerPhone}..."),
+                          content: Text(_isUrdu
+                              ? "کال ملائی جا رہی ہے: ${order.farmerPhone}"
+                              : "Dialing ${order.farmerPhone}..."),
                           backgroundColor: const Color(0xFF16A34A),
                           duration: const Duration(milliseconds: 1000),
                         ),
@@ -198,8 +201,10 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _isUrdu ? "آرڈر رسید و انوائس" : "Order Invoice Details",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+                    _isUrdu ? "آرڈر رسید" : "Order Invoice",
+                    style: _isUrdu
+                        ? AppTheme.urdu(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryDark)
+                        : AppTheme.english(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
@@ -231,7 +236,8 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                             children: [
                               Text(
                                 order.id,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
+                                style: const TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
                               ),
                               const SizedBox(height: 2),
                               Text(
@@ -248,7 +254,8 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                             ),
                             child: Text(
                               order.getStatusLabel(_isUrdu),
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: order.getStatusColor()),
+                              style: TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w800, color: order.getStatusColor()),
                             ),
                           ),
                         ],
@@ -258,8 +265,10 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
 
                     // Farmer Info
                     Text(
-                      _isUrdu ? "کسان کی تفصیلات:" : "Farmer Information:",
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+                      _isUrdu ? "کسان کی تفصیلات:" : "Farmer Details:",
+                      style: _isUrdu
+                          ? AppTheme.urdu(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark)
+                          : AppTheme.english(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -270,11 +279,11 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                       ),
                       child: Column(
                         children: [
-                          _buildDetailRow(_isUrdu ? "نام کسان" : "Farmer Name", order.farmerName),
+                          _buildDetailRow(_isUrdu ? "نام کسان" : "Farmer Name", order.getFarmerName(_isUrdu)),
                           const Divider(height: 12),
-                          _buildDetailRow(_isUrdu ? "پتہ و علاقہ" : "Delivery Location", order.getFullLocation(_isUrdu)),
+                          _buildDetailRow(_isUrdu ? "پتہ" : "Location", order.getFullLocation(_isUrdu)),
                           const Divider(height: 12),
-                          _buildDetailRow(_isUrdu ? "موبائل نمبر" : "Phone", order.farmerPhone),
+                          _buildDetailRow(_isUrdu ? "موبائل" : "Phone", order.farmerPhone),
                         ],
                       ),
                     ),
@@ -282,8 +291,10 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
 
                     // Itemized Breakdown
                     Text(
-                      _isUrdu ? "مصنوعات کی تفصیل:" : "Itemized Bill:",
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+                      _isUrdu ? "آرڈر تفصیل:" : "Itemized Bill:",
+                      style: _isUrdu
+                          ? AppTheme.urdu(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark)
+                          : AppTheme.english(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -296,14 +307,17 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                         children: [
                           _buildDetailRow(_isUrdu ? "پروڈکٹ" : "Product", order.getProductName(_isUrdu)),
                           const Divider(height: 12),
-                          _buildDetailRow(_isUrdu ? "تعداد / پیکنگ" : "Quantity", "${order.quantity} × ${order.getPackUnit(_isUrdu)}"),
-                          const Divider(height: 12),
-                          _buildDetailRow(_isUrdu ? "فی بوری ریٹ" : "Unit Rate", "Rs. ${order.unitPrice.toInt()}"),
-                          const Divider(height: 12),
-                          _buildDetailRow(_isUrdu ? "ادائیگی کا طریقہ" : "Payment Mode", order.paymentMethod),
+                          _buildDetailRow(
+                              _isUrdu ? "تعداد" : "Quantity", "${order.quantity} × ${order.getPackUnit(_isUrdu)}"),
                           const Divider(height: 12),
                           _buildDetailRow(
-                            _isUrdu ? "کل بل (Total Amount)" : "Total Bill",
+                              _isUrdu ? "یونٹ ریٹ" : "Unit Rate", "Rs. ${order.unitPrice.toInt()}"),
+                          const Divider(height: 12),
+                          _buildDetailRow(
+                              _isUrdu ? "ادائیگی" : "Payment Mode", order.getPaymentMethod(_isUrdu)),
+                          const Divider(height: 12),
+                          _buildDetailRow(
+                            _isUrdu ? "کل بل" : "Total Bill",
                             "Rs. ${order.totalPrice.toInt()}",
                             isBold: true,
                             textColor: AppColors.primaryDark,
@@ -311,11 +325,13 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                         ],
                       ),
                     ),
-                    if (order.deliveryNotes != null) ...[
+                    if (order.getDeliveryNotes(_isUrdu) != null) ...[
                       const SizedBox(height: 14),
                       Text(
                         _isUrdu ? "خصوصی ہدایات:" : "Delivery Instructions:",
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                        style: _isUrdu
+                            ? AppTheme.urdu(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark)
+                            : AppTheme.english(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textDark),
                       ),
                       const SizedBox(height: 4),
                       Container(
@@ -327,8 +343,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                           border: Border.all(color: const Color(0xFFFDE68A)),
                         ),
                         child: Text(
-                          order.deliveryNotes!,
-                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF92400E)),
+                          order.getDeliveryNotes(_isUrdu)!,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: const Color(0xFF92400E),
+                            height: _isUrdu ? 1.7 : 1.4,
+                          ),
                         ),
                       ),
                     ],
@@ -354,12 +374,16 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
             color: AppColors.textMuted,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: textColor ?? AppColors.textDark,
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+              color: textColor ?? AppColors.textDark,
+            ),
           ),
         ),
       ],
@@ -370,19 +394,16 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
   Widget build(BuildContext context) {
     final body = Column(
       children: [
-        // 1. TOP METRICS CARDS (PENDING, DISPATCHED, REVENUE)
-        _buildMetricsHeader(),
-
-        // 2. SEARCH & QUICK FILTER PILLS
+        // 1. IMPROVED SEARCH BAR & FILTER TABS (KPI Cards removed as requested)
         _buildFilterBar(),
 
-        // 3. ORDER LIST
+        // 2. ORDER LIST
         Expanded(
           child: _filteredOrders.isEmpty
               ? _buildEmptyState()
               : ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
                   itemCount: _filteredOrders.length,
                   itemBuilder: (context, index) {
                     return _buildOrderCard(_filteredOrders[index]);
@@ -403,15 +424,15 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            _isUrdu ? "کسان آرڈرز مینجمنٹ" : "Farmer Orders",
+            _isUrdu ? "کسان آرڈرز" : "Farmer Orders",
             style: _isUrdu
-                ? AppTheme.urdu(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryDark)
-                : AppTheme.english(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+                ? AppTheme.urdu(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.primaryDark)
+                : AppTheme.english(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.primaryDark),
           ),
           centerTitle: true,
           actions: [
             InkWell(
-              onTap: () => setState(() => _isUrdu = !_isUrdu),
+              onTap: () => LanguageController.instance.toggleLanguage(),
               borderRadius: BorderRadius.circular(14),
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
@@ -437,126 +458,76 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
   }
 
   // -------------------------------------------------------------
-  // 1. METRICS ROW
-  // -------------------------------------------------------------
-  Widget _buildMetricsHeader() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildMetricItem(
-            label: _isUrdu ? "نئے آرڈرز" : "Pending",
-            value: "$_pendingCount",
-            color: const Color(0xFFD97706),
-            icon: Icons.pending_actions_rounded,
-          ),
-          Container(width: 1, height: 32, color: AppColors.borderLight),
-          _buildMetricItem(
-            label: _isUrdu ? "روانہ شدہ" : "Dispatched",
-            value: "$_dispatchedCount",
-            color: const Color(0xFF7C3AED),
-            icon: Icons.local_shipping_rounded,
-          ),
-          Container(width: 1, height: 32, color: AppColors.borderLight),
-          _buildMetricItem(
-            label: _isUrdu ? "آمدن والیم" : "Delivered",
-            value: "Rs. ${_totalRevenue > 999 ? '${(_totalRevenue / 1000).toInt()}k' : _totalRevenue.toInt()}",
-            color: const Color(0xFF16A34A),
-            icon: Icons.check_circle_outline_rounded,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricItem({required String label, required String value, required Color color, required IconData icon}) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-
-  // -------------------------------------------------------------
-  // 2. SEARCH & FILTER TABS
+  // IMPROVED SEARCH & FILTER TABS (Clean, elevated, no overflow)
   // -------------------------------------------------------------
   Widget _buildFilterBar() {
     return Column(
       children: [
-        // Search Box
+        // Modern Elevated Search Box (Short, non-overflowing hint text)
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
           child: Container(
-            height: 40,
+            height: 44,
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.borderLight),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryDark.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textDark),
               decoration: InputDecoration(
-                hintText: _isUrdu ? "کسان، آرڈر ID یا پروڈکٹ تلاش کریں..." : "Search farmer, order ID or product...",
-                hintStyle: const TextStyle(fontSize: 11.5, color: AppColors.textLight),
-                prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF16A34A)),
+                hintText: _isUrdu ? "آرڈر تلاش کریں..." : "Search orders...",
+                hintStyle: const TextStyle(fontSize: 12, color: AppColors.textLight, fontWeight: FontWeight.w500),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF16A34A)),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 16),
+                        icon: const Icon(Icons.clear_rounded, size: 17, color: AppColors.textMuted),
                         onPressed: () => setState(() => _searchQuery = ""),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
 
-        // Filter Pills Row
+        // Filter Pills Row (Short, non-cropping labels)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
             children: [
-              _buildFilterPill("all", _isUrdu ? "تمام آرڈرز (${_orders.length})" : "All (${_orders.length})"),
+              _buildFilterPill(
+                  "all", _isUrdu ? "تمام (${_orders.length})" : "All (${_orders.length})"),
               const SizedBox(width: 6),
-              _buildFilterPill("pending", _isUrdu ? "نئے (${_orders.where((o) => o.status == DealerOrderStatus.pending).length})" : "Pending (${_orders.where((o) => o.status == DealerOrderStatus.pending).length})"),
+              _buildFilterPill(
+                  "pending",
+                  _isUrdu
+                      ? "نئے (${_orders.where((o) => o.status == DealerOrderStatus.pending).length})"
+                      : "Pending (${_orders.where((o) => o.status == DealerOrderStatus.pending).length})"),
               const SizedBox(width: 6),
-              _buildFilterPill("dispatched", _isUrdu ? "روانہ شدہ (${_orders.where((o) => o.status == DealerOrderStatus.dispatched).length})" : "Dispatched (${_orders.where((o) => o.status == DealerOrderStatus.dispatched).length})"),
+              _buildFilterPill(
+                  "dispatched",
+                  _isUrdu
+                      ? "روانہ (${_orders.where((o) => o.status == DealerOrderStatus.dispatched || o.status == DealerOrderStatus.confirmed).length})"
+                      : "Dispatched (${_orders.where((o) => o.status == DealerOrderStatus.dispatched || o.status == DealerOrderStatus.confirmed).length})"),
               const SizedBox(width: 6),
-              _buildFilterPill("completed", _isUrdu ? "مکمل (${_orders.where((o) => o.status == DealerOrderStatus.completed).length})" : "Completed (${_orders.where((o) => o.status == DealerOrderStatus.completed).length})"),
+              _buildFilterPill(
+                  "completed",
+                  _isUrdu
+                      ? "مکمل (${_orders.where((o) => o.status == DealerOrderStatus.completed).length})"
+                      : "Completed (${_orders.where((o) => o.status == DealerOrderStatus.completed).length})"),
             ],
           ),
         ),
@@ -569,12 +540,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
     final isSelected = _selectedFilter == key;
     return InkWell(
       onTap: () => setState(() => _selectedFilter = key),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryDark : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected ? AppColors.primaryDark : AppColors.borderLight,
           ),
@@ -592,7 +563,7 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
   }
 
   // -------------------------------------------------------------
-  // 3. ORDER CARD
+  // ORDER CARD (Clean, compact, no text overflow)
   // -------------------------------------------------------------
   Widget _buildOrderCard(DealerOrderModel order) {
     final catColor = order.category == AgriProductCategory.seeds
@@ -600,7 +571,7 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
         : const Color(0xFF0284C7);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 11),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
@@ -611,7 +582,7 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -622,7 +593,7 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
         children: [
           // 1. Order ID & Status Header Strip
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: order.getStatusBgColor().withValues(alpha: 0.5),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
@@ -668,39 +639,50 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 2. Farmer Name & Call Action
+                // 2. Farmer Name & Call Action (Guaranteed no overflow)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            order.farmerName,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                            order.getFarmerName(_isUrdu),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _isUrdu
+                                ? AppTheme.urdu(
+                                    fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textDark)
+                                : AppTheme.english(
+                                    fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textDark),
                           ),
                           const SizedBox(height: 1),
                           Row(
                             children: [
                               const Icon(Icons.location_on_outlined, size: 12, color: AppColors.textMuted),
                               const SizedBox(width: 2),
-                              Text(
-                                order.getFullLocation(_isUrdu),
-                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500),
+                              Expanded(
+                                child: Text(
+                                  order.getFullLocation(_isUrdu),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500),
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
 
-                    // Quick Call Button
+                    // Quick Call Pill
                     InkWell(
                       onTap: () => _callFarmer(order),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                         decoration: BoxDecoration(
                           color: const Color(0xFFDCFCE7),
                           borderRadius: BorderRadius.circular(16),
@@ -709,11 +691,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.call_rounded, size: 13, color: Color(0xFF16A34A)),
+                            const Icon(Icons.call_rounded, size: 12, color: Color(0xFF16A34A)),
                             const SizedBox(width: 4),
                             Text(
-                              _isUrdu ? "کال کریں" : "Call",
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
+                              _isUrdu ? "کال" : "Call",
+                              style: const TextStyle(
+                                  fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
                             ),
                           ],
                         ),
@@ -722,26 +705,28 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 const Divider(height: 1),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
-                // 3. Product & Quantity
+                // 3. Product & Price (Clean, no text crunching)
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         color: catColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
                         child: Icon(
-                          order.category == AgriProductCategory.seeds ? Icons.spa_rounded : Icons.science_rounded,
+                          order.category == AgriProductCategory.seeds
+                              ? Icons.spa_rounded
+                              : Icons.science_rounded,
                           color: catColor,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                     ),
@@ -752,35 +737,50 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                         children: [
                           Text(
                             order.getProductName(_isUrdu),
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _isUrdu
+                                ? AppTheme.urdu(
+                                    fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textDark)
+                                : AppTheme.english(
+                                    fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.textDark),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Text(
-                            "${order.quantity} × ${order.getPackUnit(_isUrdu)}  (Rs. ${order.unitPrice.toInt()} / unit)",
-                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                            "${order.quantity} × ${order.getPackUnit(_isUrdu)}",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
-                    // Price
+                    const SizedBox(width: 8),
+
+                    // Price & Payment Badge
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           "Rs. ${order.totalPrice.toInt()}",
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
+                          style: const TextStyle(
+                              fontSize: 14.5, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
                         ),
                         Text(
-                          order.paymentMethod.split('(').first.trim(),
-                          style: const TextStyle(fontSize: 9.5, color: AppColors.textLight, fontWeight: FontWeight.w600),
+                          order.getPaymentMethod(_isUrdu),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 9.5, color: AppColors.textLight, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                   ],
                 ),
 
-                // 4. Action Buttons based on status
-                const SizedBox(height: 12),
+                // 4. Concise Action Buttons (Never crop or line-wrap awkwardly)
+                const SizedBox(height: 10),
                 _buildActionButtonsRow(order),
               ],
             ),
@@ -807,8 +807,8 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
                 side: const BorderSide(color: Color(0xFFFCA5A5)),
               ),
               child: Text(
-                _isUrdu ? "منسوخ کریں" : "Decline",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.alertSoftRed),
+                _isUrdu ? "منسوخ" : "Decline",
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.alertSoftRed),
               ),
             ),
           ),
@@ -819,12 +819,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
               onPressed: () => _updateOrderStatus(
                 order,
                 DealerOrderStatus.confirmed,
-                _isUrdu ? "آرڈر قبول کر لیا گیا ہے" : "Order accepted & confirmed",
+                _isUrdu ? "آرڈر قبول کر لیا گیا ہے" : "Order accepted",
               ),
-              icon: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+              icon: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
               label: Text(
-                _isUrdu ? "آرڈر قبول کریں" : "Accept Order",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+                _isUrdu ? "قبول کریں" : "Accept",
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
@@ -859,12 +859,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
               onPressed: () => _updateOrderStatus(
                 order,
                 DealerOrderStatus.dispatched,
-                _isUrdu ? "مال فارم کے لیے روانہ ہو چکا ہے" : "Order dispatched to farm",
+                _isUrdu ? "مال روانہ ہو چکا ہے" : "Order dispatched to farm",
               ),
-              icon: const Icon(Icons.local_shipping_rounded, size: 16, color: Colors.white),
+              icon: const Icon(Icons.local_shipping_rounded, size: 15, color: Colors.white),
               label: Text(
-                _isUrdu ? "مال روانہ کریں (Dispatch)" : "Dispatch to Farm",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+                _isUrdu ? "روانہ کریں" : "Dispatch",
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2563EB),
@@ -899,12 +899,12 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
               onPressed: () => _updateOrderStatus(
                 order,
                 DealerOrderStatus.completed,
-                _isUrdu ? "آرڈر مکمل اور کیش وصول ہو گیا" : "Order marked Delivered & Paid",
+                _isUrdu ? "آرڈر مکمل اور کیش وصول ہو گیا" : "Order marked as Delivered",
               ),
-              icon: const Icon(Icons.check_circle_outline_rounded, size: 16, color: Colors.white),
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 15, color: Colors.white),
               label: Text(
-                _isUrdu ? "مکمل / ڈیلیورڈ مارک کریں" : "Mark as Delivered",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.white),
+                _isUrdu ? "ڈیلیورڈ" : "Delivered",
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
@@ -923,10 +923,10 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () => _showOrderInvoice(order),
-            icon: const Icon(Icons.receipt_long_rounded, size: 15, color: AppColors.primaryDark),
+            icon: const Icon(Icons.receipt_long_rounded, size: 14, color: AppColors.primaryDark),
             label: Text(
-              _isUrdu ? "مکمل رسید و سمری دیکھیں" : "View Complete Receipt",
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+              _isUrdu ? "رسید دیکھیں" : "View Receipt",
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -944,7 +944,7 @@ class _DealerOrdersScreenState extends State<DealerOrdersScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inbox_rounded, size: 48, color: AppColors.textLight),
+          const Icon(Icons.inbox_rounded, size: 44, color: AppColors.textLight),
           const SizedBox(height: 8),
           Text(
             _isUrdu ? "کوئی آرڈر نہیں ملا" : "No orders found",
